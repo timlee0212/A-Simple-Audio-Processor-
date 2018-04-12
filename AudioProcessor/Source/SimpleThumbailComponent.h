@@ -1,6 +1,6 @@
 #pragma once
 #include "../JuceLibraryCode/JuceHeader.h"
-
+#include "AudioSource\dRowAudio_AudioFilePlayerExt.h"
 class SimpleThumbnailComponent : public Component,
 	private ChangeListener
 {
@@ -8,7 +8,7 @@ public:
 	SimpleThumbnailComponent(int sourceSamplesPerThumbnailSample,
 		AudioFormatManager& formatManager,
 		AudioThumbnailCache &cache,
-		AudioTransportSource &transSource)
+		AudioFilePlayerExt &transSource)
 		:thumbnail(sourceSamplesPerThumbnailSample, formatManager, cache),
 		transSource(transSource), displayFullThumbnail(true)
 	{
@@ -38,7 +38,6 @@ public:
 			g.setColour(Colours::lightgrey);
 			g.fillRect(getLocalBounds());
 			g.setColour(Colours::darkblue);
-
 			auto audioLength(thumbnail.getTotalLength());
 			if (audioLength > 0.0)
 			{
@@ -79,7 +78,7 @@ public:
 	}
 private:
 	AudioThumbnail thumbnail;
-	AudioTransportSource &transSource;
+	AudioFilePlayerExt &transSource;
 
 	bool displayFullThumbnail;
 
