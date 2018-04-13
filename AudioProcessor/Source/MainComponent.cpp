@@ -12,7 +12,7 @@
 MainComponent::MainComponent() 
 	: state(Stopped), 
 	thumbnailCache(50),
-	thumbnail(64, formatManager, thumbnailCache, transportSource),
+	thumbnail(64, formatManager, thumbnailCache, audioPlayer),
 	recorder(thumbnail.getThumbnail())
 {
 	// Make sure you set the size of the component after
@@ -52,33 +52,67 @@ MainComponent::MainComponent()
 
 	addAndMakeVisible(&DSPButton);
 	DSPButton.setButtonText("Filter");
-	DSPButton.onClick = [this] {filterButtonClicked(); };
+	DSPButton.onClick = [this] {filterButtonClicked();};
 
 	addAndMakeVisible(&reverbButton);
 	reverbButton.setButtonText("Reverb");
-	reverbButton.onClick = [this] {/*reverbButtonClicked();*/  };
+	reverbButton.onClick = [this] {reverbButtonClicked(); };
+
+
+	//Not Working So Far
+	//TODO:Make it work
+	addAndMakeVisible(&reverse);
+	reverse.setButtonText("Reverse");
+	//reverse.onClick = [this] {audioPlayer.setPlayDiretion(!audioPlayer.getPlayDirection()); };
+	reverse.setEnabled(false);
 
 	addAndMakeVisible(&thumbnail);
 
 	formatManager.registerBasicFormats();
 
+
+	//Create Controls of Basic Audio Transform
+	//==============================================================================
+	for (int i = 0; i < numControls; i++)
+	{
+		playerControls.add(new Slider());
+		playerControlLabels.add(new Label());
+		addAndMakeVisible(playerControls[i]);
+		addAndMakeVisible(playerControlLabels[i]);
+		playerControlLabels[i]->setFont(12.0f);
+		playerControlLabels[i]->attachToComponent(playerControls[i], false);
+		playerControls[i]->addListener(this);
+		playerControls[i]->setValue(1.0);
+		playerControls[i]->setSliderStyle(Slider::RotaryVerticalDrag);
+		playerControls[i]->setTextBoxStyle(Slider::TextBoxBelow, false, 50, 16);
+
+		Justification centreJustification(Justification::centred);
+		playerControlLabels[i]->setJustificationType(centreJustification);
+		playerControlLabels[i]->setColour(Label::textColourId, Colours::white);
+	}
+
+	playerControls[lowEQ]->setRange(0.05, 2, 0.001);
+	playerControls[midEQ]->setRange(0.05, 2, 0.001);
+	playerControls[highEQ]->setRange(0.05, 2, 0.001);
+
+	playerControls[rate]->setRange(0.5, 1.5, 0.001);
+	playerControls[tempo]->setRange(0.5, 1.5, 0.001);
+	playerControls[pitch]->setRange(0.5, 1.5, 0.001);
+
+	for (int i = 0; i < numControls; i++)
+		playerControls[i]->setSkewFactorFromMidPoint(1.0);
+
+	playerControlLabels[lowEQ]->setText("Low EQ", dontSendNotification);
+	playerControlLabels[midEQ]->setText("Mid EQ", dontSendNotification);
+	playerControlLabels[highEQ]->setText("High EQ", dontSendNotification);
+	playerControlLabels[rate]->setText("Rate", dontSendNotification);
+	playerControlLabels[tempo]->setText("Tempo", dontSendNotification);
+	playerControlLabels[pitch]->setText("Pitch", dontSendNotification);
+	//===========================================================================
+
+	audioPlayer.addListener(this);
+	deviceManager.addAudioCallback(&recorder);
 	deviceManager.addAudioCallback(&player);
-
-	transportSource.addChangeListener(this);
-	//deviceManager.addAudioCallback(&recorder);
-
-	//Below Code is for Test
-	auto editor = gateProc.createEditor();
-	DialogWindow::LaunchOptions(NGEditor);
-	NGEditor.content.setNonOwned(editor);
-	NGEditor.dialogTitle = "Configure Audio";
-	NGEditor.componentToCentreAround = this;
-	NGEditor.dialogBackgroundColour = Colours::darkgrey;
-	NGEditor.escapeKeyTriggersCloseButton = true;
-	NGEditor.useNativeTitleBar = true;
-	NGEditor.resizable = false;
-	NGEditor.launchAsync();
-	player.setProcessor(&gateProc);
 
 	setSize(1280, 720);
 
@@ -111,24 +145,21 @@ void MainComponent::loadIcons()
 
 }
 
-void MainComponent::changeListenerCallback(ChangeBroadcaster* source)
+void MainComponent::playerStoppedOrStarted(AudioFilePlayer* player)
 {
-	if (source == &transportSource)
-	{
-		if (transportSource.isPlaying())
-			changeState(Playing);
-		else if (state == Stopping || state == Playing)
-			changeState(Stopped);
-		else if (state == Pausing)
-			changeState(Paused);
-	}
+	if (player->isPlaying())
+		changeState(Playing);
+	else if (state == Stopping || state == Playing)
+		changeState(Stopped);
+	else if (state == Pausing)
+		changeState(Paused);
 }
 
 void MainComponent::timerCallback()
 {
-	if (transportSource.isPlaying())
+	if (audioPlayer.isPlaying())
 	{
-		RelativeTime position(transportSource.getCurrentPosition());
+		RelativeTime position(audioPlayer.getCurrentPosition());
 		auto minutes = ((int)position.inMinutes()) % 60;
 		auto seconds = ((int)position.inSeconds()) % 60;
 		auto millis = ((int)position.inMilliseconds()) % 1000;
@@ -159,11 +190,11 @@ void MainComponent::changeState(TransportState newState)
 			stopButton.setEnabled(false);
 			playButton.setEnabled(true);
 			recordButton.setEnabled(true);
-			transportSource.setPosition(0.0);
+			audioPlayer.setPosition(0.0f);
 			break;
 		case Starting:
 			playButton.setEnabled(false);
-			transportSource.start();
+			audioPlayer.start();
 			break;
 		case Playing:
 			playButton.setImages(false, true, true, icon_pause, 1.0f, Colours::transparentBlack,
@@ -179,14 +210,14 @@ void MainComponent::changeState(TransportState newState)
 			recordButton.setEnabled(false);
 			break;
 		case Pausing:
-			transportSource.stop();
+			audioPlayer.stop();
 			break;
 		case Paused:
-			playButton.setImages(false, true, true, icon_pause, 1.0f, Colours::transparentBlack,
-				icon_pause, 0.8f, Colours::transparentBlack, icon_pause, 0.5f, Colours::transparentBlack);
+			playButton.setImages(false, true, true, icon_play, 1.0f, Colours::transparentBlack,
+				icon_play, 0.8f, Colours::transparentBlack, icon_play, 0.5f, Colours::transparentBlack);
 			stopButton.setEnabled(true);
 		case Stopping:
-			transportSource.stop();
+			audioPlayer.stop();
 			break;
 		}
 	}
@@ -202,8 +233,8 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     // but be careful - it will be called on the audio thread, not the GUI thread.
 
     // For more details, see the help for AudioProcessor::prepareToPlay()
-	transportSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
-	gateProc.prepareToPlay(samplesPerBlockExpected, sampleRate);
+	audioPlayer.prepareToPlay(samplesPerBlockExpected, sampleRate);
+
 	if (filterDSP.get() != nullptr)
 	{
 		filterDSP->prepareToPlay(samplesPerBlockExpected, sampleRate);
@@ -222,7 +253,8 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 
     // Right now we are not producing any data, in which case we need to clear the buffer
     // (to prevent the output of random noise)
-	if (readerSource.get() == nullptr)
+	
+	if (audioPlayer.getAudioFormatReaderSource() == nullptr)
 	{
 		bufferToFill.clearActiveBufferRegion();
 		return;
@@ -238,8 +270,10 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 	}
 	else
 	{
-		transportSource.getNextAudioBlock(bufferToFill);
+		audioPlayer.getNextAudioBlock(bufferToFill);
 	}
+
+
 }
 
 void MainComponent::releaseResources()
@@ -248,7 +282,8 @@ void MainComponent::releaseResources()
     // restarted due to a setting change.
 
     // For more details, see the help for AudioProcessor::releaseResources()
-	transportSource.releaseResources();
+	audioPlayer.releaseResources();
+
 }
 
 void MainComponent::startRecording()
@@ -271,7 +306,7 @@ void MainComponent::startRecording()
 		"*.wav");
 	if (chooser.browseForFileToSave(true))
 	{
-		transportSource.releaseResources();
+		audioPlayer.releaseResources();
 		changeState(recording);
 		lastRecording = chooser.getResult();
 		recorder.startRecord(lastRecording);
@@ -281,9 +316,8 @@ void MainComponent::startRecording()
 
 void MainComponent::openAudioFile(File &file)
 {
-	auto *reader = formatManager.createReaderFor(file);
-
-	if (reader != nullptr)
+	//auto *reader = formatManager.createReaderFor(file);
+	if (audioPlayer.setFile(file))
 	{
 		if (state != Stopped)
 		{
@@ -292,11 +326,17 @@ void MainComponent::openAudioFile(File &file)
 			else
 				changeState(Stopping);
 		}
+		audioPlayer.setLooping(false);
+		audioPlayer.setLoopBetweenTimes(false);
+
+		/*
 		std::unique_ptr<AudioFormatReaderSource> newSource(new AudioFormatReaderSource(reader, true));
 		transportSource.setSource(newSource.get(), 0, nullptr, reader->sampleRate);
+		readerSource.reset(newSource.release());
+		*/
+		
 		playButton.setEnabled(true);
 		thumbnail.setFile(file);
-		readerSource.reset(newSource.release());
 	}
 }
 
@@ -325,6 +365,18 @@ void MainComponent::resized()
 	stopButton.setBounds(controlBarsXcenter - 40, controlBarsY , 40, 40);
 	recordButton.setBounds(controlBarsXcenter + 20, controlBarsY, 40, 40);
 
+	reverse.setBounds(controlBarsXcenter + 100, controlBarsY, 200, 40);
+
+	//Filter Group
+	for (int i = 0; i < 3; i++)
+	{
+		playerControls[i]->setBounds(10 + i * 90, 180, 85, 85);
+	}
+	for (int i = 3; i < numControls; i++)
+	{
+		playerControls[i]->setBounds(10 + (i-3) * 90, 300, 85, 85);
+	}
+
 
 	openButton.setBounds( 10 , 10, 100, 40);
 	settingButton.setBounds(10, 60, 100, 40);
@@ -332,13 +384,51 @@ void MainComponent::resized()
 	reverbButton.setBounds(130, 120, 100, 40);
 	currentPositionLabel.setBounds(leftPanelWidth + 50, getHeight() - 120 , 200 , 20);
 
-	Rectangle<int> thumbnailBounds(300, 60, getWidth() - leftPanelWidth, getHeight() - 200);
 
+
+	Rectangle<int> thumbnailBounds(300, 60, getWidth() - leftPanelWidth, getHeight() - 200);
 	thumbnail.setBounds(thumbnailBounds);
 
 	if (parametersComponent.get() != nullptr)
 	{
 		parametersComponent->setBounds(0, getHeight() - 300, leftPanelWidth, 300);
+	}
+}
+
+void MainComponent::sliderValueChanged(Slider* slider)
+{	
+	if (slider == playerControls[lowEQ])
+	{
+		audioPlayer.setFilterGain(FilteringAudioSource::Low, (float)playerControls[lowEQ]->getValue());
+	}
+	else if (slider == playerControls[midEQ])
+	{
+		audioPlayer.setFilterGain(FilteringAudioSource::Mid, (float)playerControls[midEQ]->getValue());
+	}
+	else if (slider == playerControls[highEQ])
+	{
+		audioPlayer.setFilterGain(FilteringAudioSource::High, (float)playerControls[highEQ]->getValue());
+	}
+	if (audioPlayer.getSoundTouchAudioSource() != nullptr)
+	{
+		if (slider == playerControls[rate])
+		{
+			SoundTouchProcessor::PlaybackSettings settings(audioPlayer.getPlaybackSettings());
+			settings.rate = (float)playerControls[rate]->getValue();
+			audioPlayer.setPlaybackSettings(settings);
+		}
+		else if (slider == playerControls[tempo])
+		{
+			SoundTouchProcessor::PlaybackSettings settings(audioPlayer.getPlaybackSettings());
+			settings.tempo = (float)playerControls[tempo]->getValue();
+			audioPlayer.setPlaybackSettings(settings);
+		}
+		else if (slider == playerControls[pitch])
+		{
+			SoundTouchProcessor::PlaybackSettings settings(audioPlayer.getPlaybackSettings());
+			settings.pitch = (float)playerControls[pitch]->getValue();
+			audioPlayer.setPlaybackSettings(settings);
+		}
 	}
 }
 
@@ -370,7 +460,7 @@ void MainComponent::stopButtonClicked()
 	{
 		recorder.stop();
 		changeState(Stopped);
-		transportSource.releaseResources();
+		audioPlayer.releaseResources();
 
 		//Don't know why but only can release buffer in this way
 		deviceManager.closeAudioDevice();
@@ -435,7 +525,7 @@ void MainComponent::filterButtonClicked()
 	else
 	{
 		FilterEnable = true;
-		filterDSP.reset(new DSPProcessor<I2RFilter>(transportSource));
+		filterDSP.reset(new DSPProcessor<I2RFilter>(audioPlayer));
 
 		deviceManager.closeAudioDevice();
 		deviceManager.restartLastAudioDevice();
@@ -451,6 +541,7 @@ void MainComponent::filterButtonClicked()
 	}
 
 }
+
 void MainComponent::reverbButtonClicked()
 {
 	FilterEnable = false;
@@ -462,7 +553,7 @@ void MainComponent::reverbButtonClicked()
 	else
 	{
 		reverbEnable = true;
-		reverbDSP.reset(new DSPProcessor<ReverbDSP>(transportSource));		
+		reverbDSP.reset(new DSPProcessor<ReverbDSP>(audioPlayer));
 		deviceManager.closeAudioDevice();
 		deviceManager.restartLastAudioDevice();
 

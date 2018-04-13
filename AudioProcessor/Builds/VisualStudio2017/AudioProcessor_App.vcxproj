@@ -55,6 +55,12 @@
     <PlatformToolset>v141</PlatformToolset>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>E:\Learning\Sem 6\AudioProcess\A-Simple-Audio-Processor-\AudioProcessor\Source\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>E:\Learning\Sem 6\AudioProcess\A-Simple-Audio-Processor-\AudioProcessor\Source\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -78,6 +84,8 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp14</LanguageStandard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -1792,6 +1800,28 @@
     <ClCompile Include="..\..\JuceLibraryCode\include_juce_gui_extra.cpp" />
     <ClCompile Include="..\..\JuceLibraryCode\include_juce_opengl.cpp" />
     <ClCompile Include="..\..\JuceLibraryCode\include_juce_video.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\dRowAudio_AudioFilePlayer.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\dRowAudio_AudioFilePlayerExt.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\dRowAudio_FilteringAudioSource.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\dRowAudio_LoopingAudioSource.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\dRowAudio_MemoryInputSource.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\dRowAudio_ReversibleAudioSource.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\dRowAudio_SoundTouchAudioSource.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\dRowAudio_SoundTouchProcessor.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\soundtouch\AAFilter.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\soundtouch\BPMDetect.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\soundtouch\cpu_detect_x86.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\soundtouch\FIFOSampleBuffer.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\soundtouch\FIRFilter.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\soundtouch\InterpolateCubic.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\soundtouch\InterpolateLinear.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\soundtouch\InterpolateShannon.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\soundtouch\mmx_optimized.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\soundtouch\PeakFinder.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\soundtouch\RateTransposer.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\soundtouch\SoundTouch.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\soundtouch\sse_optimized.cpp" />
+    <ClCompile Include="..\..\Source\AudioSource\soundtouch\TDStretch.cpp" />
     <ClCompile Include="..\..\Source\Main.cpp" />
     <ClCompile Include="..\..\Source\MainComponent.cpp" />
   </ItemGroup>
@@ -2416,6 +2446,30 @@
     <ClInclude Include="..\..\JuceLibraryCode\AppConfig.h" />
     <ClInclude Include="..\..\JuceLibraryCode\BinaryData.h" />
     <ClInclude Include="..\..\JuceLibraryCode\JuceHeader.h" />
+    <ClInclude Include="..\..\Source\AudioSource\dRowAudio_AudioFilePlayer.h" />
+    <ClInclude Include="..\..\Source\AudioSource\dRowAudio_AudioFilePlayerExt.h" />
+    <ClInclude Include="..\..\Source\AudioSource\dRowAudio_FilteringAudioSource.h" />
+    <ClInclude Include="..\..\Source\AudioSource\dRowAudio_LoopingAudioSource.h" />
+    <ClInclude Include="..\..\Source\AudioSource\dRowAudio_MemoryInputSource.h" />
+    <ClInclude Include="..\..\Source\AudioSource\dRowAudio_ReversibleAudioSource.h" />
+    <ClInclude Include="..\..\Source\AudioSource\dRowAudio_SoundTouchAudioSource.h" />
+    <ClInclude Include="..\..\Source\AudioSource\dRowAudio_SoundTouchProcessor.h" />
+    <ClInclude Include="..\..\Source\AudioSource\dRowAudio_StreamAndFileHandler.h" />
+    <ClInclude Include="..\..\Source\AudioSource\soundtouch\AAFilter.h" />
+    <ClInclude Include="..\..\Source\AudioSource\soundtouch\BPMDetect.h" />
+    <ClInclude Include="..\..\Source\AudioSource\soundtouch\cpu_detect.h" />
+    <ClInclude Include="..\..\Source\AudioSource\soundtouch\FIFOSampleBuffer.h" />
+    <ClInclude Include="..\..\Source\AudioSource\soundtouch\FIFOSamplePipe.h" />
+    <ClInclude Include="..\..\Source\AudioSource\soundtouch\FIRFilter.h" />
+    <ClInclude Include="..\..\Source\AudioSource\soundtouch\InterpolateCubic.h" />
+    <ClInclude Include="..\..\Source\AudioSource\soundtouch\InterpolateLinear.h" />
+    <ClInclude Include="..\..\Source\AudioSource\soundtouch\InterpolateShannon.h" />
+    <ClInclude Include="..\..\Source\AudioSource\soundtouch\PeakFinder.h" />
+    <ClInclude Include="..\..\Source\AudioSource\soundtouch\RateTransposer.h" />
+    <ClInclude Include="..\..\Source\AudioSource\soundtouch\SoundTouch.h" />
+    <ClInclude Include="..\..\Source\AudioSource\soundtouch\STTypes.h" />
+    <ClInclude Include="..\..\Source\AudioSource\soundtouch\TDStretch.h" />
+    <ClInclude Include="..\..\Source\AudioSource\Utility\dRowAudio_Utility.h" />
     <ClInclude Include="..\..\Source\DSPLib.h" />
     <ClInclude Include="..\..\Source\MainComponent.h" />
     <ClInclude Include="..\..\Source\Recorder.h" />
@@ -2427,6 +2481,7 @@
     <None Include="..\..\..\modules\juce_audio_formats\codecs\oggvorbis\Ogg Vorbis Licence.txt" />
     <None Include="..\..\..\modules\juce_graphics\image_formats\jpglib\changes to libjpeg for JUCE.txt" />
     <None Include="..\..\..\modules\juce_graphics\image_formats\pnglib\libpng_readme.txt" />
+    <None Include="..\..\Source\AudioSource\soundtouch\SoundTouch.vcproj" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include=".\resources.rc" />

@@ -10,7 +10,6 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MainComponent.h"
-#include "AudioDeviceManagerWindow.h"
 //==============================================================================
 class AudioProcessorApplication  : public JUCEApplication
 {

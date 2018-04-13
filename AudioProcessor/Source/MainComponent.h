@@ -13,32 +13,35 @@
 #include "SimpleThumbailComponent.h"
 #include "Recorder.h"
 #include "DSPLib.h"
-
+#include "AudioSource/dRowAudio_AudioFilePlayerExt.h"
 
 //==============================================================================
 /*
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent   : public AudioAppComponent,
-						public ChangeListener,
-						public Timer
+class MainComponent : public AudioAppComponent,
+	public AudioFilePlayerExt::Listener,
+	public Timer,
+	public Slider::Listener
 {
 public:
-    //==============================================================================
-    MainComponent();
-    ~MainComponent();
+	//==============================================================================
+	MainComponent();
+	~MainComponent();
 
-    //==============================================================================
-    void prepareToPlay (int samplesPerBlockExpected, double sampleRate) override;
-    void getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill) override;
-    void releaseResources() override;
+	//==============================================================================
+	void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override;
+	void getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill) override;
+	void releaseResources() override;
 
-    //==============================================================================
-    void paint (Graphics& g) override;
-    void resized() override;
-	void changeListenerCallback(ChangeBroadcaster* source) override;
+	//==============================================================================
+	void paint(Graphics& g) override;
+	void resized() override;
+	void sliderValueChanged(Slider* slider) override;
 	void timerCallback() override;
+	void playerStoppedOrStarted(AudioFilePlayer* player) override;
+	void fileChanged(AudioFilePlayer* player) override {}
 
 private:
     //==============================================================================
@@ -72,6 +75,18 @@ private:
 		recorded,
 		Stopping
 	};
+
+	enum PlayerControls
+	{
+		lowEQ,
+		midEQ,
+		highEQ,
+		rate,
+		tempo,
+		pitch,
+		numControls
+	};
+
 	TextButton openButton;
     ImageButton playButton;
     ImageButton stopButton;
@@ -79,14 +94,17 @@ private:
 	TextButton settingButton;
 	TextButton DSPButton;
 	TextButton reverbButton;
+	ToggleButton reverse;
 
 	ScopedPointer<DSPParametersComponent> parametersComponent;
 
 	ScopedPointer<DSPProcessor<I2RFilter>> filterDSP;
 	ScopedPointer<DSPProcessor<ReverbDSP>> reverbDSP;
     AudioFormatManager formatManager;
-    std::unique_ptr<AudioFormatReaderSource> readerSource;
-    AudioTransportSource transportSource;
+	AudioFilePlayerExt audioPlayer;
+
+	OwnedArray<Slider> playerControls;
+	OwnedArray<Label> playerControlLabels;
 
     TransportState state;
 	Label currentPositionLabel;
