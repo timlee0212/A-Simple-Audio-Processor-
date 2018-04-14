@@ -60,8 +60,8 @@ void ReversibleAudioSource::getNextAudioBlock (const AudioSourceChannelInfo& inf
 {
 	if (isForwards) 
     {
-        input->getNextAudioBlock (info);
-        previousReadPosition = input->getNextReadPosition();
+        //input->getNextAudioBlock (info); /* Adapation to my usage. */
+        previousReadPosition = input->getNextReadPosition(); 
     }
     else
 	{
@@ -69,6 +69,8 @@ void ReversibleAudioSource::getNextAudioBlock (const AudioSourceChannelInfo& inf
         
 		if (nextReadPosition < 0 && input->isLooping())
 			nextReadPosition += input->getTotalLength();
+		else if (nextReadPosition < 0)
+			nextReadPosition = 0;
 		
 		input->setNextReadPosition (nextReadPosition);
         input->getNextAudioBlock (info);

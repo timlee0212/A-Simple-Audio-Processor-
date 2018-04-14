@@ -129,10 +129,13 @@ public:
 	/** Returns the FilteringAudioSource being used.
      */
     inline FilteringAudioSource* getFilteringAudioSource()         {   return filteringAudioSource;    }
+
+	inline BufferingAudioSource* getBufferingAudioSource() { return bufferingAudioSource; }
+
     
 private:	
     //==============================================================================
-    ScopedPointer<BufferingAudioSource> bufferingAudioSource;
+	ScopedPointer<BufferingAudioSource> bufferingAudioSource;
     ScopedPointer<LoopingAudioSource> loopingAudioSource;
     ScopedPointer<SoundTouchAudioSource> soundTouchAudioSource;
     ScopedPointer<ReversibleAudioSource> reversibleAudioSource;

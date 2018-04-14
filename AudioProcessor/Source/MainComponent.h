@@ -102,6 +102,7 @@ private:
 	ScopedPointer<DSPProcessor<ReverbDSP>> reverbDSP;
     AudioFormatManager formatManager;
 	AudioFilePlayerExt audioPlayer;
+	ScopedPointer<ReversibleAudioSource> reverseSource;
 
 	OwnedArray<Slider> playerControls;
 	OwnedArray<Label> playerControlLabels;

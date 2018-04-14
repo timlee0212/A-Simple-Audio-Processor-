@@ -63,8 +63,19 @@ MainComponent::MainComponent()
 	//TODO:Make it work
 	addAndMakeVisible(&reverse);
 	reverse.setButtonText("Reverse");
-	//reverse.onClick = [this] {audioPlayer.setPlayDiretion(!audioPlayer.getPlayDirection()); };
-	reverse.setEnabled(false);
+	reverse.onClick = [this] { 
+		//To Avoid Reader Conflict of the TimeSliced Thread
+		if (!reverse.getToggleState())
+		{
+			//audioPlayer.getAudioFormatReaderSource()->setNextReadPosition(audioPlayer.getAudioTransportSource()->getNextReadPosition());
+			audioPlayer.getTimeSliceThread()->wait(500);
+		}
+		else
+			audioPlayer.getTimeSliceThread()->notify();
+		reverseSource->setPlayDirection(!reverse.getToggleState());
+
+	};
+	//reverse.setEnabled(false);
 
 	addAndMakeVisible(&thumbnail);
 
@@ -235,7 +246,14 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     // For more details, see the help for AudioProcessor::prepareToPlay()
 	audioPlayer.prepareToPlay(samplesPerBlockExpected, sampleRate);
 
-	if (filterDSP.get() != nullptr)
+	if(reverseSource.get()!=nullptr)
+		reverseSource->prepareToPlay(samplesPerBlockExpected, sampleRate);
+
+	if (reverseSource.get() != nullptr)
+	{
+		reverseSource->prepareToPlay(samplesPerBlockExpected, sampleRate);
+	}
+	if(filterDSP.get() != nullptr)
 	{
 		filterDSP->prepareToPlay(samplesPerBlockExpected, sampleRate);
 	}
@@ -270,7 +288,19 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 	}
 	else
 	{
-		audioPlayer.getNextAudioBlock(bufferToFill);
+		//Update position when forward and fill the buffer when backward
+ 		if (!reverse.getToggleState())
+		{
+			audioPlayer.getNextAudioBlock(bufferToFill);
+		}
+		else
+		{
+			audioPlayer.getAudioTransportSource()->setNextReadPosition(audioPlayer.getAudioFormatReaderSource()->getNextReadPosition());
+		}
+		if (reverseSource.get() != nullptr)
+		{
+			reverseSource->getNextAudioBlock(bufferToFill);
+		}
 	}
 
 
@@ -283,6 +313,7 @@ void MainComponent::releaseResources()
 
     // For more details, see the help for AudioProcessor::releaseResources()
 	audioPlayer.releaseResources();
+	reverseSource->releaseResources();
 
 }
 
@@ -316,7 +347,7 @@ void MainComponent::startRecording()
 
 void MainComponent::openAudioFile(File &file)
 {
-	//auto *reader = formatManager.createReaderFor(file);
+	auto *reader = formatManager.createReaderFor(file);
 	if (audioPlayer.setFile(file))
 	{
 		if (state != Stopped)
@@ -326,15 +357,16 @@ void MainComponent::openAudioFile(File &file)
 			else
 				changeState(Stopping);
 		}
-		audioPlayer.setLooping(false);
+		//audioPlayer.setLooping(false);
 		audioPlayer.setLoopBetweenTimes(false);
+	
+		reverseSource.reset(new ReversibleAudioSource(audioPlayer.getAudioFormatReaderSource(), false));
 
 		/*
 		std::unique_ptr<AudioFormatReaderSource> newSource(new AudioFormatReaderSource(reader, true));
 		transportSource.setSource(newSource.get(), 0, nullptr, reader->sampleRate);
-		readerSource.reset(newSource.release());
+		//readerSource.reset(newSource.release());
 		*/
-		
 		playButton.setEnabled(true);
 		thumbnail.setFile(file);
 	}
