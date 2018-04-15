@@ -97,6 +97,7 @@ public:
 	
 	//==============================================================================
 	MainComponent();
+
 	~MainComponent();
 	//==============================================================================
 	enum CommandIDs
@@ -168,31 +169,6 @@ private:
     //==============================================================================
     // Your private member variables go here...
 
-
-	void openButtonClicked();
-	void playButtonClicked();
-	void stopButtonClicked();
-	
-	void recordButtonClicked();
-	void filterButtonClicked();
-	void reverbButtonClicked();
-	void settingButtonClicked();
-	
-	void addProcessorButtonClicked();
-	void removeProcessorButtonClickde(int index);
-	void saveButtonClicked();
-	void saveCurrentWave(File &file);
-	void applyEffects();
-	void mixerButtonClicked();
-
-	void loadIcons();
-
-	void startRecording();
-
-	void openAudioFile(File &file);
-
-	const int leftPanelWidth = 300;
-
 	enum TransportState
 	{
 		Stopped,
@@ -218,8 +194,39 @@ private:
 
 	enum processorType
 	{
-		compressor
+		MoorerReverb,
+		CrossStereoDelay,
+		StereoChorus,
+		filter
 	};
+	//====================================
+	void openButtonClicked();
+	void playButtonClicked();
+	void stopButtonClicked();
+	void procSettingButtonClicked();
+	void removeProcButtonClicked();
+	
+	void recordButtonClicked();
+	void filterButtonClicked();
+	void reverbButtonClicked();
+	void settingButtonClicked();
+	void addProcButtonClicked();
+	
+	void addProcessorButtonClicked();
+	void removeProcessorButtonClickde(int index);
+	void saveButtonClicked();
+	void saveCurrentWave(File &file);
+	void applyEffects();
+	void mixerButtonClicked();
+
+	void loadIcons();
+
+	void startRecording();
+
+	void openAudioFile(File &file);
+	void changeState(TransportState newState);
+
+	const int leftPanelWidth = 300;
 
 	//==================================
 	ApplicationCommandManager commandManager;
@@ -233,10 +240,20 @@ private:
 	BurgerMenuHeader menuHeader{ sidePanel };
 	//=========================================
 
-	TextButton openButton, settingButton;
+	TextButton openButton, settingButton, addProcButton, removeProcButton, procSettingButton;
     ImageButton playButton, stopButton, recordButton;
 	ToggleButton reverse, swap;
-	ComboBox processorList;
+	ComboBox availProcList;
+	ComboBox currentProcList;
+
+	OwnedArray<Slider> playerControls;
+	OwnedArray<Label> playerControlLabels;
+
+	Label currentPositionLabel;
+	AudioThumbnailCache thumbnailCache;
+	SimpleThumbnailComponent thumbnail;
+	MixerComponent mixer;
+	//==========================================
 
 	ScopedPointer<DSPParametersComponent> parametersComponent;
 
@@ -246,22 +263,15 @@ private:
 	AudioFilePlayerExt audioPlayer;
 	ScopedPointer<ReversibleAudioSource> reverseSource;
 
-	OwnedArray<Slider> playerControls;
-	OwnedArray<Label> playerControlLabels;
-
-    TransportState state;
-	Label currentPositionLabel;
-	AudioThumbnailCache thumbnailCache;
-	SimpleThumbnailComponent thumbnail;
-	MixerComponent mixer;
-
-    Recorder recorder;
-	File lastRecording;
-
 	OwnedArray<AudioProcessor> processorChain;
 	OwnedArray<AudioProcessorEditor> processorEditorChain;
 
 	AudioProcessorPlayer player;
+
+    TransportState state;
+
+    Recorder recorder;
+	File lastRecording;
 
 	TemporaryFile tempfile; //To save the processed wave
 
@@ -276,7 +286,6 @@ private:
 	Image icon_resume;
 	Image icon_stop;
 
-	void changeState(TransportState newState);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

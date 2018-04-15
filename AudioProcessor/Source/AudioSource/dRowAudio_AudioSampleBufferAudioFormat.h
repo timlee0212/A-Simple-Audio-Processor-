@@ -31,7 +31,7 @@
 
 #ifndef __DROWAUDIO_AUDIOSAMPLEBUFFERAUDIOFORMAT_H__
 #define __DROWAUDIO_AUDIOSAMPLEBUFFERAUDIOFORMAT_H__
-
+#include "../../JuceLibraryCode/JuceHeader.h"
 //==============================================================================
 /**
     Streams data from an AudioSampleBuffer.

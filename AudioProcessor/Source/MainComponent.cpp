@@ -26,8 +26,7 @@ MainComponent::MainComponent()
 	
 	addAndMakeVisible(&openButton);
 	openButton.setButtonText("Save");
-	openButton.onClick = [this] {saveButtonClicked(); };
-	
+	openButton.onClick = [this] {openButtonClicked(); };	
 
 	addAndMakeVisible(&playButton);
 	playButton.setImages(false, true, true, icon_play, 1.0f, Colours::transparentBlack,
@@ -55,18 +54,32 @@ MainComponent::MainComponent()
 	reverse.setButtonText("Reverse");
 	reverse.onClick = [this] {
 		if (!reverse.getToggleState())
-		{
 			audioPlayer.getTimeSliceThread()->wait(500);
-		}
 		else
 			audioPlayer.getTimeSliceThread()->notify();
 		reverseSource->setPlayDirection(!reverse.getToggleState());
-
 	}; 
 
 	addAndMakeVisible(&swap);
 	swap.setButtonText("Swap Channels");
 	swap.onClick = [this] { swapped = swap.getToggleState(); };
+
+	addAndMakeVisible(&addProcButton);
+	addProcButton.setButtonText("+");
+	addProcButton.onClick = [this] { addProcButtonClicked();};
+
+	addAndMakeVisible(&removeProcButton);
+	removeProcButton.setButtonText("-");
+	removeProcButton.onClick = [this] {	removeProcButtonClicked();};
+
+	addAndMakeVisible(&procSettingButton);
+	procSettingButton.setButtonText("Setting");
+	procSettingButton.onClick = [this] {procSettingButtonClicked(); };
+
+	addAndMakeVisible(&availProcList);
+	availProcList.addItemList({ "MoorerReverb", "PingPongDelay","StereoChorus", "Frequalizer"}, 1);
+
+	addAndMakeVisible(&currentProcList);
 
 	addAndMakeVisible(&thumbnail);
 
@@ -122,6 +135,61 @@ MainComponent::MainComponent()
 	setAudioChannels(2, 2);
 
 	startTimer(15);
+}
+
+void MainComponent::procSettingButtonClicked()
+{
+	if (currentProcList.getSelectedId() != 0)
+	{
+		DialogWindow::LaunchOptions(ProcSetting);
+		ProcSetting.content.setNonOwned(processorEditorChain[currentProcList.getSelectedId() - 1]);
+		ProcSetting.dialogTitle = "Plugin Setting";
+		ProcSetting.componentToCentreAround = this;
+		ProcSetting.dialogBackgroundColour = Colours::darkgrey;
+		ProcSetting.escapeKeyTriggersCloseButton = true;
+		ProcSetting.useNativeTitleBar = true;
+		ProcSetting.resizable = false;
+		ProcSetting.runModal();
+	}
+}
+
+void MainComponent::removeProcButtonClicked()
+{
+	if (currentProcList.getSelectedId() != 0)
+	{
+		processorEditorChain.remove(currentProcList.getSelectedId() - 1);
+		processorChain.remove(currentProcList.getSelectedId() - 1);
+		currentProcList.clear();
+		for (auto proc : processorChain)
+		{
+			currentProcList.addItem(proc->getName(), currentProcList.getNumItems() + 1);
+		}
+	}
+}
+
+void MainComponent::addProcButtonClicked()
+{
+	deviceManager.closeAudioDevice();
+	switch (availProcList.getSelectedId() - 1)
+	{
+	case MoorerReverb:
+		processorChain.add(new MoorerReverbAudioProcessor());		
+		break;
+	case CrossStereoDelay:
+		processorChain.add(new CrossStereoDelayAudioProcessor());
+		break;
+	case StereoChorus:
+		processorChain.add(new StereoChorusAudioProcessor());
+		break;
+	case filter:
+		processorChain.add(new FrequalizerAudioProcessor());
+		break;
+	default:
+		return;
+	}
+	processorEditorChain.add(processorChain.getLast()->createEditor());
+	currentProcList.addItem(processorChain.getLast()->getName(), currentProcList.getNumItems() + 1);
+	deviceManager.restartLastAudioDevice();
 }
 
 MainComponent::~MainComponent()
@@ -238,6 +306,12 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
 
     // For more details, see the help for AudioProcessor::prepareToPlay()
 	audioPlayer.prepareToPlay(samplesPerBlockExpected, sampleRate);
+
+	for (auto proc : processorChain)
+	{
+		proc->prepareToPlay(sampleRate, samplesPerBlockExpected);
+	}
+
 	if (reverseSource.get() != nullptr)
 	{
 		reverseSource->prepareToPlay(samplesPerBlockExpected, sampleRate);
@@ -301,7 +375,8 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 
 	for (auto processor : processorChain)
 	{
-		processor->processBlock(*(bufferToFill.buffer), MidiBuffer());
+		if(!bufferToFill.buffer->hasBeenCleared())
+			processor->processBlock(*(bufferToFill.buffer), MidiBuffer());
 	}
 
 
@@ -313,6 +388,8 @@ void MainComponent::releaseResources()
     // restarted due to a setting change.
 
     // For more details, see the help for AudioProcessor::releaseResources()
+	for (auto proc : processorChain)
+		proc->releaseResources();
 	audioPlayer.releaseResources();
 	if(reverseSource.get()!=nullptr)
 		reverseSource->releaseResources();
@@ -439,6 +516,13 @@ void MainComponent::resized()
 	//DSPButton.setBounds(15, 120, 100, 40);
 	//reverbButton.setBounds(130, 120, 100, 40);
 	currentPositionLabel.setBounds(leftPanelWidth + 50, getHeight() - 120 , 200 , 20);
+
+	availProcList.setBounds(10, getHeight() - 240, 150, 30);
+	addProcButton.setBounds(180, getHeight() - 240, 30, 30);
+
+	currentProcList.setBounds(10, getHeight() - 200, 150, 30);
+	removeProcButton.setBounds(180, getHeight() - 200, 30, 30);
+	procSettingButton.setBounds(220, getHeight() - 200, 60, 30);
 
 	Rectangle<int> thumbnailBounds( 303 , 113, getWidth() - 316, getHeight() - 266);
 	thumbnail.setBounds(thumbnailBounds);
