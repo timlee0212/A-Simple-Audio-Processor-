@@ -10,7 +10,8 @@ public:
 		AudioThumbnailCache &cache,
 		AudioFilePlayerExt &transSource)
 		:thumbnail(sourceSamplesPerThumbnailSample, formatManager, cache),
-		transSource(transSource), displayFullThumbnail(true)
+		transSource(transSource), displayFullThumbnail(true),
+		waveColour(Colours::lightgrey)
 	{
 		thumbnail.addChangeListener(this);
 	}
@@ -29,15 +30,14 @@ public:
 	{
 		if (thumbnail.getNumChannels() == 0)
 		{
-			g.setColour(Colours::grey);
 			g.setColour(Colours::white);
 			g.drawFittedText("No File Loaded", getLocalBounds(), Justification::centred, 1.0f);
 		}
 		else
 		{
-			g.setColour(Colours::lightgrey);
-			g.fillRect(getLocalBounds());
-			g.setColour(Colours::darkblue);
+			//g.setColour(Colours::lightgrey);
+			//g.fillRect(getLocalBounds());
+			g.setColour(waveColour);
 			auto audioLength(thumbnail.getTotalLength());
 			if (audioLength > 0.0)
 			{
@@ -71,6 +71,8 @@ public:
 		}
 	}
 
+	void setWaveColour(Colour newColour) { waveColour = newColour; }
+
 	void changeListenerCallback(ChangeBroadcaster *source) override
 	{
 		if (source == &thumbnail)
@@ -79,6 +81,7 @@ public:
 private:
 	AudioThumbnail thumbnail;
 	AudioFilePlayerExt &transSource;
+	Colour waveColour;
 
 	bool displayFullThumbnail;
 

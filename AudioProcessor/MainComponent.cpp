@@ -11,30 +11,18 @@
 //==============================================================================
 MainComponent::MainComponent() 
 	: state(Stopped), 
-	thumbnailCache(40),
+	thumbnailCache(50),
 	thumbnail(64, formatManager, thumbnailCache, audioPlayer),
 	recorder(thumbnail.getThumbnail())
 {
 	// Make sure you set the size of the component after
 	// you add any child components.
 
-	menuBar.reset(new MenuBarComponent(this));
-	addAndMakeVisible(menuBar.get());
-	setApplicationCommandManagerToWatch(&commandManager);
-	commandManager.registerAllCommandsForTarget(this);
-
-	// this lets the command manager use keypresses that arrive in our window to send out commands
-	addKeyListener(commandManager.getKeyMappings());
-
-    addChildComponent(menuHeader);
-	addAndMakeVisible(settingsCommandTarget);
-	addAndMakeVisible(sidePanel);
-	//===============================================================================================
 	loadIcons();
 	
-	//addAndMakeVisible(&openButton);
-	//openButton.setButtonText("Open...");
-	//openButton.onClick = [this] {openButtonClicked(); };
+	addAndMakeVisible(&openButton);
+	openButton.setButtonText("Open...");
+	openButton.onClick = [this] {openButtonClicked(); };
 
 	addAndMakeVisible(&playButton);
 	playButton.setImages(false, true, true, icon_play, 1.0f, Colours::transparentBlack,
@@ -53,14 +41,29 @@ MainComponent::MainComponent()
 	currentPositionLabel.setText("Stopped", dontSendNotification);
 	currentPositionLabel.setFont(Font(20, Font::bold));
 
+	addAndMakeVisible(&settingButton);
+	settingButton.setButtonText("Setting");
+	settingButton.onClick = [this] {settingButtonClicked(); };
+
 	addAndMakeVisible(&recordButton);
 	recordButton.setImages(false, true, true, icon_record, 1.0f, Colours::transparentBlack,
 		icon_record, 0.8f, Colours::transparentBlack, icon_record, 0.5f, Colours::transparentBlack);
 	recordButton.onClick = [this] {recordButtonClicked(); };
 
+	addAndMakeVisible(&DSPButton);
+	DSPButton.setButtonText("Filter");
+	DSPButton.onClick = [this] {filterButtonClicked();};
+
+	addAndMakeVisible(&reverbButton);
+	reverbButton.setButtonText("Reverb");
+	reverbButton.onClick = [this] {reverbButtonClicked(); };
+
+
+	//Not Working So Far
+	//TODO:Make it work
 	addAndMakeVisible(&reverse);
 	reverse.setButtonText("Reverse");
-	reverse.onClick = [this] {
+	reverse.onClick = [this] { 
 		//To Avoid Reader Conflict of the TimeSliced Thread
 		if (!reverse.getToggleState())
 		{
@@ -71,11 +74,8 @@ MainComponent::MainComponent()
 			audioPlayer.getTimeSliceThread()->notify();
 		reverseSource->setPlayDirection(!reverse.getToggleState());
 
-	}; 
-
-	addAndMakeVisible(&swap);
-	swap.setButtonText("Swap Channels");
-	swap.onClick = [this] { swapped = swap.getToggleState(); };
+	};
+	//reverse.setEnabled(false);
 
 	addAndMakeVisible(&thumbnail);
 
@@ -94,7 +94,7 @@ MainComponent::MainComponent()
 		playerControlLabels[i]->attachToComponent(playerControls[i], false);
 		playerControls[i]->addListener(this);
 		playerControls[i]->setValue(1.0);
-		playerControls[i]->setSliderStyle(Slider::LinearHorizontal);
+		playerControls[i]->setSliderStyle(Slider::RotaryVerticalDrag);
 		playerControls[i]->setTextBoxStyle(Slider::TextBoxBelow, false, 50, 16);
 
 		Justification centreJustification(Justification::centred);
@@ -135,9 +135,7 @@ MainComponent::MainComponent()
 
 MainComponent::~MainComponent()
 {
-	//MenuBarModel::setMacMainMenu(nullptr);
 	deviceManager.removeAudioCallback(&recorder);
-
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
 }
@@ -247,11 +245,15 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
 
     // For more details, see the help for AudioProcessor::prepareToPlay()
 	audioPlayer.prepareToPlay(samplesPerBlockExpected, sampleRate);
+
+	if(reverseSource.get()!=nullptr)
+		reverseSource->prepareToPlay(samplesPerBlockExpected, sampleRate);
+
 	if (reverseSource.get() != nullptr)
 	{
 		reverseSource->prepareToPlay(samplesPerBlockExpected, sampleRate);
 	}
-	if (filterDSP.get() != nullptr)
+	if(filterDSP.get() != nullptr)
 	{
 		filterDSP->prepareToPlay(samplesPerBlockExpected, sampleRate);
 	}
@@ -285,9 +287,9 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 		reverbDSP->getNextAudioBlock(bufferToFill);
 	}
 	else
-	{		
+	{
 		//Update position when forward and fill the buffer when backward
-		if (!reverse.getToggleState())
+ 		if (!reverse.getToggleState())
 		{
 			audioPlayer.getNextAudioBlock(bufferToFill);
 		}
@@ -301,17 +303,6 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 		}
 	}
 
-	if (swapped && bufferToFill.buffer->getNumChannels()==2)
-	{
-		ScopedLock sl(lock);
-		for (auto i = 0; i < bufferToFill.buffer->getNumSamples(); i++)
-		{
-			float temp = bufferToFill.buffer->getSample(0, i);
-			bufferToFill.buffer->setSample(0, i, bufferToFill.buffer->getSample(1, i));
-			bufferToFill.buffer->setSample(1, i, temp);
-		}
-	}
-
 
 }
 
@@ -321,9 +312,9 @@ void MainComponent::releaseResources()
     // restarted due to a setting change.
 
     // For more details, see the help for AudioProcessor::releaseResources()
-
 	audioPlayer.releaseResources();
 	reverseSource->releaseResources();
+
 }
 
 void MainComponent::startRecording()
@@ -356,8 +347,7 @@ void MainComponent::startRecording()
 
 void MainComponent::openAudioFile(File &file)
 {
-	//auto *reader = formatManager.createReaderFor(file);
-	ScopedLock sl(lock);
+	auto *reader = formatManager.createReaderFor(file);
 	if (audioPlayer.setFile(file))
 	{
 		if (state != Stopped)
@@ -369,19 +359,14 @@ void MainComponent::openAudioFile(File &file)
 		}
 		//audioPlayer.setLooping(false);
 		audioPlayer.setLoopBetweenTimes(false);
+	
 		reverseSource.reset(new ReversibleAudioSource(audioPlayer.getAudioFormatReaderSource(), false));
 
-		//Swap Channels Only Valid for Stereo Audio
-		if (audioPlayer.getAudioFormatReaderSource()->getAudioFormatReader()->numChannels == 2)
-			swap.setEnabled(true);
-		else
-			swap.setEnabled(false);
 		/*
 		std::unique_ptr<AudioFormatReaderSource> newSource(new AudioFormatReaderSource(reader, true));
 		transportSource.setSource(newSource.get(), 0, nullptr, reader->sampleRate);
-		readerSource.reset(newSource.release());
+		//readerSource.reset(newSource.release());
 		*/
-		
 		playButton.setEnabled(true);
 		thumbnail.setFile(file);
 	}
@@ -393,13 +378,8 @@ void MainComponent::paint (Graphics& g)
     // (Our component is opaque, so we must completely fill the background with a solid colour)
 	g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
 
-	g.setColour(Colours::lightcoral);
-	g.fillRoundedRectangle(10, 40, 280,getHeight()-50,10);
-	//Thumbnail Wave
-	g.fillRoundedRectangle(300,40,getWidth()-310,60,10);
-	//Main Wave
-	g.fillRoundedRectangle(300, 110, getWidth() - 310, getHeight() - 260, 10);
-	
+	g.setColour(Colours::grey);
+	g.fillRect(Rectangle<float>(0, 0, 300, getHeight()));
     // You can add your drawing code here!
 }
 
@@ -409,21 +389,7 @@ void MainComponent::resized()
     // This is called when the MainContentComponent is resized.
     // If you add any child components, this is where you should
     // update their positions.
-	//=========================================================================
-	auto b = getBounds();
 
-	//if (menuBarPosition == MenuBarPosition::window)
-	//{
-		menuBar->setBounds(b.removeFromTop(LookAndFeel::getDefaultLookAndFeel()
-			.getDefaultMenuBarHeight()));
-	//}
-	//else if (menuBarPosition == MenuBarPosition::burger)
-	//{
-		//menuHeader.setBounds(b.removeFromTop(40));
-	//}
-
-	settingsCommandTarget.setBounds(b);
-	//=========================================================================
 	//ControlBar
 	int controlBarsY = getHeight() - 100;
 	int controlBarsXcenter = (getWidth() + leftPanelWidth) / 2;
@@ -432,30 +398,32 @@ void MainComponent::resized()
 	recordButton.setBounds(controlBarsXcenter + 20, controlBarsY, 40, 40);
 
 	reverse.setBounds(controlBarsXcenter + 100, controlBarsY, 200, 40);
-	swap.setBounds(controlBarsXcenter + 200, controlBarsY, 100, 40);
 
 	//Filter Group
 	for (int i = 0; i < 3; i++)
 	{
-		playerControls[i]->setBounds(20 + i * 90, 80, 85, 85);
+		playerControls[i]->setBounds(10 + i * 90, 180, 85, 85);
 	}
 	for (int i = 3; i < numControls; i++)
 	{
-		playerControls[i]->setBounds(20 + (i-3) * 90, 200, 85, 85);
+		playerControls[i]->setBounds(10 + (i-3) * 90, 300, 85, 85);
 	}
 
-	//openButton.setBounds( 15 , 15, 100, 40);
-	//settingButton.setBounds(15, 60, 100, 40);
-	//DSPButton.setBounds(15, 120, 100, 40);
-	//reverbButton.setBounds(130, 120, 100, 40);
+
+	openButton.setBounds( 10 , 10, 100, 40);
+	settingButton.setBounds(10, 60, 100, 40);
+	DSPButton.setBounds(10, 120, 100, 40);
+	reverbButton.setBounds(130, 120, 100, 40);
 	currentPositionLabel.setBounds(leftPanelWidth + 50, getHeight() - 120 , 200 , 20);
 
-	Rectangle<int> thumbnailBounds( 303 , 113, getWidth() - 316, getHeight() - 266);
+
+
+	Rectangle<int> thumbnailBounds(300, 60, getWidth() - leftPanelWidth, getHeight() - 200);
 	thumbnail.setBounds(thumbnailBounds);
 
 	if (parametersComponent.get() != nullptr)
 	{
-		parametersComponent->setBounds(15, getHeight() - 300, leftPanelWidth-20, 300);
+		parametersComponent->setBounds(0, getHeight() - 300, leftPanelWidth, 300);
 	}
 }
 
@@ -525,7 +493,6 @@ void MainComponent::stopButtonClicked()
 		recorder.stop();
 		changeState(Stopped);
 		audioPlayer.releaseResources();
-		reverseSource->releaseResources();
 
 		//Don't know why but only can release buffer in this way
 		deviceManager.closeAudioDevice();
