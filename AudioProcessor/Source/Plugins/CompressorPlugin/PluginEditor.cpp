@@ -27,7 +27,7 @@
 //[/MiscUserDefs]
 
 //==============================================================================
-PluginAudioProcessorEditor::PluginAudioProcessorEditor (PluginAudioProcessor& p)
+PluginAudioProcessorEditor::PluginAudioProcessorEditor (CompressorAudiorocessor& p)
     : AudioProcessorEditor (&p), processor (p)
 {
     addAndMakeVisible (thresholdSlider = new Slider ("Threshold Slider"));

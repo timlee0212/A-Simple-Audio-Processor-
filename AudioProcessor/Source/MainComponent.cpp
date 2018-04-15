@@ -1,19 +1,12 @@
-/*
-  ==============================================================================
-
-    This file was auto-generated!
-
-  ==============================================================================
-  */
-
 #include "MainComponent.h"
 
 //==============================================================================
 MainComponent::MainComponent() 
 	: state(Stopped), 
 	thumbnailCache(40),
-	thumbnail(64, formatManager, thumbnailCache, audioPlayer),
+	thumbnail(64, formatManager, thumbnailCache, *(audioPlayer.getAudioTransportSource())),
 	recorder(thumbnail.getThumbnail())
+	,mixer(deviceManager)
 {
 	// Make sure you set the size of the component after
 	// you add any child components.
@@ -27,14 +20,14 @@ MainComponent::MainComponent()
 	addKeyListener(commandManager.getKeyMappings());
 
     addChildComponent(menuHeader);
-	addAndMakeVisible(settingsCommandTarget);
 	addAndMakeVisible(sidePanel);
 	//===============================================================================================
 	loadIcons();
 	
-	//addAndMakeVisible(&openButton);
-	//openButton.setButtonText("Open...");
-	//openButton.onClick = [this] {openButtonClicked(); };
+	addAndMakeVisible(&openButton);
+	openButton.setButtonText("Save");
+	openButton.onClick = [this] {saveButtonClicked(); };
+	
 
 	addAndMakeVisible(&playButton);
 	playButton.setImages(false, true, true, icon_play, 1.0f, Colours::transparentBlack,
@@ -61,10 +54,8 @@ MainComponent::MainComponent()
 	addAndMakeVisible(&reverse);
 	reverse.setButtonText("Reverse");
 	reverse.onClick = [this] {
-		//To Avoid Reader Conflict of the TimeSliced Thread
 		if (!reverse.getToggleState())
 		{
-			//audioPlayer.getAudioFormatReaderSource()->setNextReadPosition(audioPlayer.getAudioTransportSource()->getNextReadPosition());
 			audioPlayer.getTimeSliceThread()->wait(500);
 		}
 		else
@@ -275,7 +266,7 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 		bufferToFill.clearActiveBufferRegion();
 		return;
 	}
-	
+	/*
 	if (filterDSP.get() != nullptr && FilterEnable)
 	{
 		filterDSP->getNextAudioBlock(bufferToFill);
@@ -283,33 +274,34 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 	else if (reverbDSP.get() != nullptr && reverbEnable)
 	{
 		reverbDSP->getNextAudioBlock(bufferToFill);
+	}*/	
+	//Update position when forward and fill the buffer when backward
+	if (!reverse.getToggleState())
+	{
+		audioPlayer.getNextAudioBlock(bufferToFill);
 	}
 	else
-	{		
-		//Update position when forward and fill the buffer when backward
-		if (!reverse.getToggleState())
-		{
-			audioPlayer.getNextAudioBlock(bufferToFill);
-		}
-		else
-		{
-			audioPlayer.getAudioTransportSource()->setNextReadPosition(audioPlayer.getAudioFormatReaderSource()->getNextReadPosition());
-		}
-		if (reverseSource.get() != nullptr)
-		{
-			reverseSource->getNextAudioBlock(bufferToFill);
-		}
+	{
+		audioPlayer.getAudioTransportSource()->setNextReadPosition(audioPlayer.getAudioFormatReaderSource()->getNextReadPosition());
+	}
+	if (reverseSource.get() != nullptr && !isSaving)
+	{
+		reverseSource->getNextAudioBlock(bufferToFill);
 	}
 
 	if (swapped && bufferToFill.buffer->getNumChannels()==2)
 	{
-		ScopedLock sl(lock);
 		for (auto i = 0; i < bufferToFill.buffer->getNumSamples(); i++)
 		{
 			float temp = bufferToFill.buffer->getSample(0, i);
 			bufferToFill.buffer->setSample(0, i, bufferToFill.buffer->getSample(1, i));
 			bufferToFill.buffer->setSample(1, i, temp);
 		}
+	}
+
+	for (auto processor : processorChain)
+	{
+		processor->processBlock(*(bufferToFill.buffer), MidiBuffer());
 	}
 
 
@@ -321,9 +313,9 @@ void MainComponent::releaseResources()
     // restarted due to a setting change.
 
     // For more details, see the help for AudioProcessor::releaseResources()
-
 	audioPlayer.releaseResources();
-	reverseSource->releaseResources();
+	if(reverseSource.get()!=nullptr)
+		reverseSource->releaseResources();
 }
 
 void MainComponent::startRecording()
@@ -357,7 +349,6 @@ void MainComponent::startRecording()
 void MainComponent::openAudioFile(File &file)
 {
 	//auto *reader = formatManager.createReaderFor(file);
-	ScopedLock sl(lock);
 	if (audioPlayer.setFile(file))
 	{
 		if (state != Stopped)
@@ -422,7 +413,6 @@ void MainComponent::resized()
 		//menuHeader.setBounds(b.removeFromTop(40));
 	//}
 
-	settingsCommandTarget.setBounds(b);
 	//=========================================================================
 	//ControlBar
 	int controlBarsY = getHeight() - 100;
@@ -444,7 +434,7 @@ void MainComponent::resized()
 		playerControls[i]->setBounds(20 + (i-3) * 90, 200, 85, 85);
 	}
 
-	//openButton.setBounds( 15 , 15, 100, 40);
+	openButton.setBounds( 15 , 315, 100, 40);
 	//settingButton.setBounds(15, 60, 100, 40);
 	//DSPButton.setBounds(15, 120, 100, 40);
 	//reverbButton.setBounds(130, 120, 100, 40);
@@ -495,6 +485,223 @@ void MainComponent::sliderValueChanged(Slider* slider)
 		}
 	}
 }
+///=============================================================================
+///Menu Related Section
+///=============================================================================
+PopupMenu MainComponent::getMenuForIndex(int menuIndex, const String& /*menuName*/)
+{
+	PopupMenu menu;
+
+	if (menuIndex == 0)
+	{
+		menu.addCommandItem(&commandManager, CommandIDs::fileOpen);
+		menu.addCommandItem(&commandManager, CommandIDs::fileSave);
+		menu.addCommandItem(&commandManager, CommandIDs::fileSaveas);
+		menu.addCommandItem(&commandManager, CommandIDs::fileNewrecording);
+	}
+	else if (menuIndex == 1)
+	{
+		menu.addCommandItem(&commandManager, CommandIDs::settingsSetting);
+		menu.addCommandItem(&commandManager, CommandIDs::settingsColour);
+	}
+	else if (menuIndex == 2)
+	{
+		menu.addCommandItem(&commandManager, CommandIDs::effectLinein);
+		menu.addCommandItem(&commandManager, CommandIDs::effectLineout);
+		menu.addCommandItem(&commandManager, CommandIDs::effectReverb);
+		menu.addCommandItem(&commandManager, CommandIDs::effectEcho);
+	}
+	else if (menuIndex == 3)
+	{
+		menu.addCommandItem(&commandManager, CommandIDs::functionFilter);
+		menu.addCommandItem(&commandManager, CommandIDs::functionUpend);
+		menu.addCommandItem(&commandManager, CommandIDs::functionExchange);
+		menu.addCommandItem(&commandManager, CommandIDs::functionRecognize);
+	}
+
+	return menu;
+}
+
+void MainComponent::getAllCommands(Array<CommandID>& c)
+{
+	Array<CommandID> commands{
+		//===========================================
+		//File Relating
+		CommandIDs::fileOpen,
+		CommandIDs::fileSave,
+		CommandIDs::fileSaveas,
+		CommandIDs::fileNewrecording,
+		//============================================
+		//Setting Relating
+		CommandIDs::settingsSetting,
+		CommandIDs::settingsColour,
+		//=======================================
+		//Effects Relating
+		CommandIDs::effectReverb,
+		CommandIDs::effectLinein,
+		CommandIDs::effectLineout,
+		CommandIDs::effectEcho,
+		//=======================================
+		//Functions Relating
+		CommandIDs::functionFilter,
+		CommandIDs::functionUpend,
+		CommandIDs::functionExchange,
+		CommandIDs::functionRecognize
+	};
+}
+
+void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& result)
+{
+	switch (commandID)
+	{
+		//===================================================
+		//File Relating
+	case CommandIDs::fileOpen:
+		result.setInfo("Open..", "Open an audio file", "Menu", 0);
+		//result.setTicked();
+		result.addDefaultKeypress('w', ModifierKeys::shiftModifier);
+		break;
+	case CommandIDs::fileSave:
+		result.setInfo("Save", "Save the change", "Menu", 0);
+		//result.setTicked();
+		result.addDefaultKeypress('g', ModifierKeys::shiftModifier);
+		break;
+	case CommandIDs::fileSaveas:
+		result.setInfo("Save as..", "Save the current file as a new file", "Menu", 0);
+		//result.setTicked();
+		result.addDefaultKeypress('b', ModifierKeys::shiftModifier);
+		break;
+	case CommandIDs::fileNewrecording:
+		result.setInfo("New recording file", "Build a new file beginning with recording", "Menu", 0);
+		//result.setTicked();
+		result.addDefaultKeypress('q', ModifierKeys::shiftModifier);
+		break;
+		//================================================================
+		//Setting Relating
+	case CommandIDs::settingsSetting:
+		result.setInfo("Setting", "Setting what? I don't know", "Settings", 0);
+		//result.setTicked(currentColour == Colours::red);
+		result.addDefaultKeypress('r', ModifierKeys::commandModifier);
+		break;
+	case CommandIDs::settingsColour:
+		result.setInfo("Colour", "Sets the UI Colour", "Settings", 0);
+		//result.setTicked(currentColour == Colours::green);
+		result.addDefaultKeypress('g', ModifierKeys::commandModifier);
+		break;
+
+		//================================================================
+		//Effect Relating
+	case CommandIDs::effectReverb:
+		result.setInfo("Reverb", "Get a reverb", "Effect", 0);
+		//result.setTicked(currentColour == Colours::red);
+		result.addDefaultKeypress('r', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+		break;
+	case CommandIDs::effectLinein:
+		result.setInfo("Line in", "Sets the inner colour to green", "Effect", 0);
+		//result.setTicked(currentColour == Colours::green);
+		result.addDefaultKeypress('i', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+		break;
+	case CommandIDs::effectLineout:
+		result.setInfo("Line out", "Sets the inner colour to blue", "Effect", 0);
+		//result.setTicked(currentColour == Colours::blue);
+		result.addDefaultKeypress('o', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+		break;
+	case CommandIDs::effectEcho:
+		result.setInfo("Echo", "Sets the inner colour to blue", "Effect", 0);
+		//result.setTicked(currentColour == Colours::blue);
+		result.addDefaultKeypress('e', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+		break;
+
+		//==============================================================
+		//Function Relating
+	case CommandIDs::functionFilter:
+		result.setInfo("Filter", "Filter the wave", "Function", 0);
+		//result.setTicked(currentColour == Colours::red);
+		result.addDefaultKeypress('f', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+		break;
+	case CommandIDs::functionUpend:
+		result.setInfo("Upend", "Sets the inner colour to green", "Function", 0);
+		//result.setTicked(currentColour == Colours::green);
+		result.addDefaultKeypress('u', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+		break;
+	case CommandIDs::functionExchange:
+		result.setInfo("Exchange", "Sets the inner colour to blue", "Function", 0);
+		//result.setTicked(currentColour == Colours::blue);
+		result.addDefaultKeypress('x', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+		break;
+	case CommandIDs::functionRecognize:
+		result.setInfo("Recognize", "Distinguish between male and female voices", "Inner", 0);
+		//result.setTicked(currentColour == Colours::blue);
+		result.addDefaultKeypress('b', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+		break;
+
+	default:
+		break;
+	}
+}
+
+bool MainComponent::perform(const InvocationInfo& info)
+{
+	switch (info.commandID)
+	{
+		//===========================================
+		//File Relating
+	case CommandIDs::fileOpen:
+		openButtonClicked();
+		break;
+	case CommandIDs::fileSave:
+		saveButtonClicked();
+		break;
+	case CommandIDs::fileSaveas:
+		saveButtonClicked();
+		break;
+	case CommandIDs::fileNewrecording:
+		recordButtonClicked();
+		break;
+		//==================================
+		//Setting Relating
+	case CommandIDs::settingsSetting:
+		settingButtonClicked();
+		break;
+	case CommandIDs::settingsColour:
+		//currentColour = Colours::green;
+		break;
+		//====================================
+		//Effects Relating
+	case CommandIDs::effectReverb:
+		//MainComponent::reverbButtonClicked();
+		break;
+	case CommandIDs::effectLinein:
+		//currentColour = Colours::green;
+		break;
+	case CommandIDs::effectLineout:
+		//currentColour = Colours::blue;
+		break;
+	case CommandIDs::effectEcho:
+		//currentColour = Colours::blue;
+		break;
+		//========================================
+		//Function Relating
+	case CommandIDs::functionFilter:
+		//filterButtonClicked();///
+		break;
+	case CommandIDs::functionUpend:
+		//currentColour = Colours::green;
+		break;
+	case CommandIDs::functionExchange:
+		//currentColour = Colours::blue;
+		break;
+	case CommandIDs::functionRecognize:
+		//currentColour = Colours::blue;
+		break;
+	default:
+		return false;
+	}
+
+	return true;
+}
+///Menu Section
+///===================================================================================
 
 void MainComponent::openButtonClicked()
 {
@@ -633,5 +840,99 @@ void MainComponent::reverbButtonClicked()
 		}
 		resized();
 	}
+}
 
+void MainComponent::mixerButtonClicked()
+{
+	deviceManager.addAudioCallback(&mixer);
+	DialogWindow::LaunchOptions(mixerWin);
+	mixerWin.content.setNonOwned(&mixer);
+	mixerWin.dialogTitle = "Configure Audio";
+	mixerWin.componentToCentreAround = this;
+	mixerWin.dialogBackgroundColour = Colours::darkgrey;
+	mixerWin.escapeKeyTriggersCloseButton = true;
+	mixerWin.useNativeTitleBar = true;
+	mixerWin.resizable = true;
+	mixerWin.runModal();
+	deviceManager.removeAudioCallback(&mixer);
+}
+
+void MainComponent::addProcessorButtonClicked()
+{
+
+}
+void MainComponent::removeProcessorButtonClickde(int index)
+{
+}
+void MainComponent::saveButtonClicked()
+{
+	FileChooser chooser("Select a the place to save...",
+		File::nonexistent,	"*.wav;*.mp3");
+	if (chooser.browseForFileToSave(true))
+	{
+		auto file = chooser.getResult();
+		file.deleteFile();
+		saveCurrentWave(file);
+	}
+}
+void MainComponent::saveCurrentWave(File &file)
+{
+
+	int64 totalSamples = audioPlayer.getTotalLength();
+
+	audioPlayer.stop();
+
+	//Get the information of channels and SampleRate
+	AudioDeviceManager::AudioDeviceSetup setup;
+	deviceManager.getAudioDeviceSetup(setup);
+
+	std::unique_ptr<AudioFormat> format;
+	String extensionName = file.getFileExtension();
+	if (extensionName == "MP3" || extensionName == "mp3")
+		format.reset(new MP3AudioFormat());
+	else
+		format.reset(new WavAudioFormat());
+
+	ScopedPointer<OutputStream> outStream(file.createOutputStream());
+	if (outStream != nullptr)
+	{
+		ScopedPointer<AudioFormatWriter> writer(format->createWriterFor(outStream,
+			setup.sampleRate, 2, 16, {}, 0));
+		if (writer != nullptr)
+		{
+			outStream.release();
+			//deviceManager.closeAudioDevice(); //Avoid Artifacts While Writing
+			isSaving = true;
+
+			if (reverseSource.get() != nullptr && reverse.getToggleState())
+			{
+				audioPlayer.setNextReadPosition(audioPlayer.getTotalLength());
+				reverseSource->updatePreviousReadPosition(audioPlayer.getNextReadPosition());
+			}
+			else
+				audioPlayer.setPosition(0.0f);
+			audioPlayer.start();
+			deviceManager.closeAudioDevice();
+			this->prepareToPlay(setup.bufferSize, setup.sampleRate);
+			writer->writeFromAudioSource(*this, totalSamples);
+			writer = nullptr;
+
+			isSaving = false;
+			openAudioFile(file);
+			audioPlayer.setPosition(0.0f);
+			reverseSource->updatePreviousReadPosition(0);
+			deviceManager.restartLastAudioDevice();
+		}
+	}
+
+}
+void MainComponent::applyEffects()
+{
+	File temp = tempfile.getFile();
+	temp.deleteFile();
+	saveCurrentWave(temp);
+	processorChain.clear(true);
+	processorEditorChain.clear(true);
+	for (int i = 0; i < numControls; i++)
+		playerControls[i]->setValue(1.0);	//Set to default value
 }

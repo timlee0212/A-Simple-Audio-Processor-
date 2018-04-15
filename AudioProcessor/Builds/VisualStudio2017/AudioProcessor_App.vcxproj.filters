@@ -379,6 +379,9 @@
     <Filter Include="AudioProcessor\Source\Plugins">
       <UniqueIdentifier>{b3580e08-d9cb-4b49-9e2b-022873bf03f0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="AudioProcessor\Source\Plugins\Compressor">
+      <UniqueIdentifier>{4a81f756-9abe-495c-acc3-b27b8472d955}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\modules\juce_audio_basics\buffers\juce_AudioChannelSet.cpp">
@@ -2135,6 +2138,18 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\BPMDetect.cpp">
       <Filter>AudioProcessor\Source\AudioSource\soundtouch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Plugins\CompressorPlugin\PluginEditor.cpp">
+      <Filter>AudioProcessor\Source\Plugins\Compressor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Plugins\CompressorPlugin\PluginProcessor.cpp">
+      <Filter>AudioProcessor\Source\Plugins\Compressor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Plugins\CompressorPlugin\GainDynamics.cpp">
+      <Filter>AudioProcessor\Source\Plugins\Compressor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Plugins\CompressorPlugin\PeakLevelDetector.cpp">
+      <Filter>AudioProcessor\Source\Plugins\Compressor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -4084,6 +4099,33 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\soundtouch\BPMDetect.h">
       <Filter>AudioProcessor\Source\AudioSource\soundtouch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\TrackComponent.h">
+      <Filter>AudioProcessor\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\MixerComponent.h">
+      <Filter>AudioProcessor\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Plugins\plugins.h">
+      <Filter>AudioProcessor\Source\Plugins</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Plugins\plugins_inlcude.h">
+      <Filter>AudioProcessor\Source\Plugins</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Plugins\CompressorPlugin\PluginEditor.h">
+      <Filter>AudioProcessor\Source\Plugins\Compressor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Plugins\CompressorPlugin\PluginProcessor.h">
+      <Filter>AudioProcessor\Source\Plugins\Compressor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Plugins\CompressorPlugin\UParam.h">
+      <Filter>AudioProcessor\Source\Plugins\Compressor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Plugins\CompressorPlugin\GainDynamics.h">
+      <Filter>AudioProcessor\Source\Plugins\Compressor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Plugins\CompressorPlugin\PeakLevelDetector.h">
+      <Filter>AudioProcessor\Source\Plugins\Compressor</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

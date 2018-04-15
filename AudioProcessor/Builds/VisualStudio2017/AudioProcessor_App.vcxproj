@@ -1824,6 +1824,10 @@
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\TDStretch.cpp" />
     <ClCompile Include="..\..\Source\Main.cpp" />
     <ClCompile Include="..\..\Source\MainComponent.cpp" />
+    <ClCompile Include="..\..\Source\Plugins\CompressorPlugin\GainDynamics.cpp" />
+    <ClCompile Include="..\..\Source\Plugins\CompressorPlugin\PeakLevelDetector.cpp" />
+    <ClCompile Include="..\..\Source\Plugins\CompressorPlugin\PluginEditor.cpp" />
+    <ClCompile Include="..\..\Source\Plugins\CompressorPlugin\PluginProcessor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\modules\juce_audio_basics\audio_play_head\juce_AudioPlayHead.h" />
@@ -2472,9 +2476,18 @@
     <ClInclude Include="..\..\Source\AudioSource\Utility\dRowAudio_Utility.h" />
     <ClInclude Include="..\..\Source\DSPLib.h" />
     <ClInclude Include="..\..\Source\MainComponent.h" />
+    <ClInclude Include="..\..\Source\MixerComponent.h" />
+    <ClInclude Include="..\..\Source\Plugins\CompressorPlugin\GainDynamics.h" />
+    <ClInclude Include="..\..\Source\Plugins\CompressorPlugin\PeakLevelDetector.h" />
+    <ClInclude Include="..\..\Source\Plugins\CompressorPlugin\PluginEditor.h" />
+    <ClInclude Include="..\..\Source\Plugins\CompressorPlugin\PluginProcessor.h" />
+    <ClInclude Include="..\..\Source\Plugins\CompressorPlugin\UParam.h" />
+    <ClInclude Include="..\..\Source\Plugins\plugins.h" />
+    <ClInclude Include="..\..\Source\Plugins\plugins_inlcude.h" />
     <ClInclude Include="..\..\Source\Recorder.h" />
     <ClInclude Include="..\..\Source\Resource.h" />
     <ClInclude Include="..\..\Source\SimpleThumbailComponent.h" />
+    <ClInclude Include="..\..\Source\TrackComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\modules\juce_audio_formats\codecs\flac\Flac Licence.txt" />

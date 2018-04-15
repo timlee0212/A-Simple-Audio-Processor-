@@ -37,11 +37,11 @@
 */
 class PluginAudioProcessorEditor  : public AudioProcessorEditor,
                                     public Timer,
-                                    public SliderListener
+									public Slider::Listener
 {
 public:
     //==============================================================================
-    PluginAudioProcessorEditor (PluginAudioProcessor& p);
+    PluginAudioProcessorEditor (CompressorAudiorocessor& p);
     ~PluginAudioProcessorEditor();
 
     //==============================================================================
@@ -60,11 +60,11 @@ private:
 
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
-    PluginAudioProcessor& processor;
+    CompressorAudiorocessor& processor;
 
-    PluginAudioProcessor& getProcessor() const
+    CompressorAudiorocessor& getProcessor() const
     {
-        return static_cast<PluginAudioProcessor&> (processor);
+        return static_cast<CompressorAudiorocessor&> (processor);
     }
 
     float normalizedValue;

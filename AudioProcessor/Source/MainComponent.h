@@ -14,6 +14,8 @@
 #include "Recorder.h"
 #include "DSPLib.h"
 #include "AudioSource/dRowAudio_AudioFilePlayerExt.h"
+#include "MixerComponent.h"
+#include "Plugins\plugins_inlcude.h"
 
 //==============================================================================
 /*
@@ -115,110 +117,19 @@ public:
 		functionRecognize//功能辨别男女声
 	};
 	
-	StringArray getMenuBarNames() override
-	{
-		return { "File", "Settings", "Effect","Function" };
-	}
+	StringArray getMenuBarNames() override {return { "File", "Settings", "Effect","Function" };}
 
-	PopupMenu getMenuForIndex(int menuIndex, const String& /*menuName*/) override
-	{
-		PopupMenu menu;
+	PopupMenu getMenuForIndex(int menuIndex, const String& /*menuName*/) override;
 
-		if (menuIndex == 0)
-		{
-			menu.addCommandItem(&commandManager, CommandIDs::fileOpen);
-			menu.addCommandItem(&commandManager, CommandIDs::fileSave);
-			menu.addCommandItem(&commandManager, CommandIDs::fileSaveas);
-			menu.addCommandItem(&commandManager, CommandIDs::fileNewrecording);
-		}
-		else if (menuIndex == 1)
-		{
-			menu.addCommandItem(&commandManager, CommandIDs::settingsSetting);
-			menu.addCommandItem(&commandManager, CommandIDs::settingsColour);
-		}
-		else if (menuIndex == 2)
-		{
-			menu.addCommandItem(&commandManager, CommandIDs::effectLinein);
-			menu.addCommandItem(&commandManager, CommandIDs::effectLineout);
-			 menu.addCommandItem(&commandManager, CommandIDs::effectReverb);
-			 menu.addCommandItem(&commandManager, CommandIDs::effectEcho);
-		}
-		else if (menuIndex == 3)
-		{
-			menu.addCommandItem(&commandManager, CommandIDs::functionFilter);
-			menu.addCommandItem(&commandManager, CommandIDs::functionUpend);
-			menu.addCommandItem(&commandManager, CommandIDs::functionExchange);
-			menu.addCommandItem(&commandManager, CommandIDs::functionRecognize);
-		}
-
-		return menu;
-	}
 	void menuItemSelected(int /*menuItemID*/, int /*topLevelMenuIndex*/) override {}
 
-	ApplicationCommandTarget* getNextCommandTarget() override
-	{
-		return &settingsCommandTarget;
-	}
-	void getAllCommands(Array<CommandID>& c) override
-	{
-		Array<CommandID> commands{ CommandIDs::fileOpen,
-			CommandIDs::fileSave,
-			CommandIDs::fileSaveas,
-		    CommandIDs::fileNewrecording};
-		c.addArray(commands);
-	}
+	ApplicationCommandTarget* getNextCommandTarget() override{return findFirstTargetParentComponent();}
 
-	void getCommandInfo(CommandID commandID, ApplicationCommandInfo& result) override
-	{
-		switch (commandID)
-		{
-		case CommandIDs::fileOpen:
-			result.setInfo("Open..", "Open an audio file", "Menu", 0);
-			//result.setTicked();
-			result.addDefaultKeypress('w', ModifierKeys::shiftModifier);
-			break;
-		case CommandIDs::fileSave:
-			result.setInfo("Save", "Save the change", "Menu", 0);
-			//result.setTicked();
-			result.addDefaultKeypress('g', ModifierKeys::shiftModifier);
-			break;
-		case CommandIDs::fileSaveas:
-			result.setInfo("Save as..", "Save the current file as a new file", "Menu", 0);
-			//result.setTicked();
-			result.addDefaultKeypress('b', ModifierKeys::shiftModifier);
-			break;
-		case CommandIDs::fileNewrecording:
-			result.setInfo("New recording file", "Build a new file beginning with recording", "Menu", 0);
-			//result.setTicked();
-			result.addDefaultKeypress('q', ModifierKeys::shiftModifier);
-			break;
-		default:
-			break;
-		}
-	}
+	void getAllCommands(Array<CommandID>& c) override;
 
-	bool perform(const InvocationInfo& info) override//File相关按键点击
-	{
-		switch (info.commandID)
-		{
-		case CommandIDs::fileOpen:
-			openButtonClicked();
-			break;
-		case CommandIDs::fileSave:
-			//setMenuBarPosition(MenuBarPosition::global);
-			break;
-		case CommandIDs::fileSaveas:
-			//setMenuBarPosition(MenuBarPosition::burger);
-			break;
-		case CommandIDs::fileNewrecording:
-			recordButtonClicked();
-			break;
-		default:
-			return false;
-		}
+	void getCommandInfo(CommandID commandID, ApplicationCommandInfo& result) override;
 
-		return true;
-	}
+	bool perform(const InvocationInfo& info) override;
 	   
 	/*void setMenuBarPosition(MenuBarPosition newPosition)
 	{
@@ -252,7 +163,6 @@ public:
 	void timerCallback() override;
 	void playerStoppedOrStarted(AudioFilePlayer* player) override;
 	void fileChanged(AudioFilePlayer* player) override {};
-	
 
 private:
     //==============================================================================
@@ -268,7 +178,12 @@ private:
 	void reverbButtonClicked();
 	void settingButtonClicked();
 	
-	
+	void addProcessorButtonClicked();
+	void removeProcessorButtonClickde(int index);
+	void saveButtonClicked();
+	void saveCurrentWave(File &file);
+	void applyEffects();
+	void mixerButtonClicked();
 
 	void loadIcons();
 
@@ -301,6 +216,11 @@ private:
 		numControls
 	};
 
+	enum processorType
+	{
+		compressor
+	};
+
 	//==================================
 	ApplicationCommandManager commandManager;
 
@@ -316,6 +236,7 @@ private:
 	TextButton openButton, settingButton;
     ImageButton playButton, stopButton, recordButton;
 	ToggleButton reverse, swap;
+	ComboBox processorList;
 
 	ScopedPointer<DSPParametersComponent> parametersComponent;
 
@@ -332,17 +253,22 @@ private:
 	Label currentPositionLabel;
 	AudioThumbnailCache thumbnailCache;
 	SimpleThumbnailComponent thumbnail;
+	MixerComponent mixer;
 
     Recorder recorder;
 	File lastRecording;
-	CriticalSection lock;
+
+	OwnedArray<AudioProcessor> processorChain;
+	OwnedArray<AudioProcessorEditor> processorEditorChain;
 
 	AudioProcessorPlayer player;
+
+	TemporaryFile tempfile; //To save the processed wave
 
 	bool FilterEnable = false;
 	bool reverbEnable = false;
 	bool swapped = false;
-
+	bool isSaving = false;
 	//Icon Resource
 	Image icon_play;
 	Image icon_pause;
@@ -351,246 +277,6 @@ private:
 	Image icon_stop;
 
 	void changeState(TransportState newState);
-
-	class SettingsCommandTarget : public Component,
-		public ApplicationCommandTarget
-	{
-	public:
-		SettingsCommandTarget(ApplicationCommandManager& m)
-			: commandManager(m),
-			effectCommandTarget(commandManager)
-		{
-			commandManager.registerAllCommandsForTarget(this);
-
-			addAndMakeVisible(effectCommandTarget);
-		}
-
-		//==============================================================================
-		ApplicationCommandTarget* getNextCommandTarget() override
-		{
-			return &effectCommandTarget;
-		}
-
-		void getAllCommands(Array<CommandID>& c) override
-		{
-			Array<CommandID> commands{ CommandIDs::settingsSetting,
-				CommandIDs::settingsColour };
-
-			c.addArray(commands);
-		}
-
-		void getCommandInfo(CommandID commandID, ApplicationCommandInfo& result) override
-		{
-			switch (commandID)
-			{
-			case CommandIDs::settingsSetting:
-				result.setInfo("Setting", "Setting what? I don't know", "Settings", 0);
-				//result.setTicked(currentColour == Colours::red);
-				result.addDefaultKeypress('r', ModifierKeys::commandModifier);
-				break;
-			case CommandIDs::settingsColour:
-				result.setInfo("Colour", "Sets the UI Colour", "Settings", 0);
-				//result.setTicked(currentColour == Colours::green);
-				result.addDefaultKeypress('g', ModifierKeys::commandModifier);
-				break;
-			default:
-				break;
-			}
-		}
-
-		bool perform(const InvocationInfo& info) override//settings相关按键点击
-		{
-			switch (info.commandID)
-			{
-			case CommandIDs::settingsSetting:
-				//settingButtonClicked();
-				break;
-			case CommandIDs::settingsColour:
-				//currentColour = Colours::green;
-				break;
-			default:
-				return false;
-			}
-			return true;
-		}
-
-	private:
-		//==============================================================================
-		/**
-		Command messages that aren't handled in the OuterCommandTarget will be passed
-		to this class to respond to.
-		*/
-		class EffectCommandTarget : public Component,
-			public ApplicationCommandTarget
-		{
-		public:
-			EffectCommandTarget(ApplicationCommandManager& m)
-				: commandManager(m),
-				functionCommandTarget(commandManager)
-			{
-				commandManager.registerAllCommandsForTarget(this);
-
-				addAndMakeVisible(functionCommandTarget);
-			}
-
-			//==============================================================================
-			ApplicationCommandTarget* getNextCommandTarget() override
-			{
-				// this will return the next parent component that is an ApplicationCommandTarget
-				return &functionCommandTarget;
-			}
-
-			void getAllCommands(Array<CommandID>& c) override
-			{
-				Array<CommandID> commands{ CommandIDs::effectReverb,
-					CommandIDs::effectLinein,
-					CommandIDs::effectLineout,
-				    CommandIDs::effectEcho};
-
-				c.addArray(commands);
-			}
-
-			void getCommandInfo(CommandID commandID, ApplicationCommandInfo& result) override
-			{
-				switch (commandID)
-				{
-				case CommandIDs::effectReverb:
-					result.setInfo("Reverb", "Get a reverb", "Effect", 0);
-					//result.setTicked(currentColour == Colours::red);
-					result.addDefaultKeypress('r', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
-					break;
-				case CommandIDs::effectLinein:
-					result.setInfo("Line in", "Sets the inner colour to green", "Effect", 0);
-					//result.setTicked(currentColour == Colours::green);
-					result.addDefaultKeypress('i', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
-					break;
-				case CommandIDs::effectLineout:
-					result.setInfo("Line out", "Sets the inner colour to blue", "Effect", 0);
-					//result.setTicked(currentColour == Colours::blue);
-					result.addDefaultKeypress('o', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
-					break;
-				case CommandIDs::effectEcho:
-					result.setInfo("Echo", "Sets the inner colour to blue", "Effect", 0);
-					//result.setTicked(currentColour == Colours::blue);
-					result.addDefaultKeypress('e', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
-					break;
-				default:
-					break;
-				}
-			}
-
-			bool perform(const InvocationInfo& info) override//Effect相关按键点击
-			{
-				switch (info.commandID)
-				{
-				case CommandIDs::effectReverb:
-					//MainComponent::reverbButtonClicked();
-					break;
-				case CommandIDs::effectLinein:
-					//currentColour = Colours::green;
-					break;
-				case CommandIDs::effectLineout:
-					//currentColour = Colours::blue;
-					break;
-				case CommandIDs::effectEcho:
-					//currentColour = Colours::blue;
-					break;
-				default:
-					return false;
-				}
-				return true;
-			}
-		private:
-			struct FunctionCommandTarget : public Component,
-				public ApplicationCommandTarget
-			{
-				FunctionCommandTarget(ApplicationCommandManager& m)
-					: commandManager(m)
-				{
-					commandManager.registerAllCommandsForTarget(this);
-				}
-
-				//==============================================================================
-				ApplicationCommandTarget* getNextCommandTarget() override
-				{
-					// this will return the next parent component that is an ApplicationCommandTarget
-					return findFirstTargetParentComponent();
-				}
-
-				void getAllCommands(Array<CommandID>& c) override
-				{
-					Array<CommandID> commands{ CommandIDs::functionFilter,
-						CommandIDs::functionUpend,
-						CommandIDs::functionExchange,
-					    CommandIDs::functionRecognize};
-
-					c.addArray(commands);
-				}
-
-				void getCommandInfo(CommandID commandID, ApplicationCommandInfo& result) override
-				{
-					switch (commandID)
-					{
-					case CommandIDs::functionFilter:
-						result.setInfo("Filter", "Filter the wave", "Function", 0);
-						//result.setTicked(currentColour == Colours::red);
-						result.addDefaultKeypress('f', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
-						break;
-					case CommandIDs::functionUpend:
-						result.setInfo("Upend", "Sets the inner colour to green", "Function", 0);
-						//result.setTicked(currentColour == Colours::green);
-						result.addDefaultKeypress('u', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
-						break;
-					case CommandIDs::functionExchange:
-						result.setInfo("Exchange", "Sets the inner colour to blue", "Function", 0);
-						//result.setTicked(currentColour == Colours::blue);
-						result.addDefaultKeypress('x', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
-						break;
-					case CommandIDs::functionRecognize:
-						result.setInfo("Recognize", "Distinguish between male and female voices", "Inner", 0);
-						//result.setTicked(currentColour == Colours::blue);
-						result.addDefaultKeypress('b', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
-						break;
-					default:
-						break;
-					}
-				}
-
-				bool perform(const InvocationInfo& info) override//function相关功能点击
-				{
-					switch (info.commandID)
-					{
-					case CommandIDs::functionFilter:
-						//filterButtonClicked();///!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1111
-						break;
-					case CommandIDs::functionUpend:
-						//currentColour = Colours::green;
-						break;
-					case CommandIDs::functionExchange:
-						//currentColour = Colours::blue;
-						break;
-					case CommandIDs::functionRecognize:
-						//currentColour = Colours::blue;
-						break;
-					default:
-						return false;
-					}
-					return true;
-				}
-				ApplicationCommandManager & commandManager;
-			};
-
-			ApplicationCommandManager& commandManager;
-			FunctionCommandTarget functionCommandTarget;
-		};
-
-		ApplicationCommandManager& commandManager;
-		EffectCommandTarget effectCommandTarget;
-	};
-	
-
-	SettingsCommandTarget settingsCommandTarget{ commandManager };
-
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

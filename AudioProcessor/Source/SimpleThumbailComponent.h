@@ -8,7 +8,7 @@ public:
 	SimpleThumbnailComponent(int sourceSamplesPerThumbnailSample,
 		AudioFormatManager& formatManager,
 		AudioThumbnailCache &cache,
-		AudioFilePlayerExt &transSource)
+		AudioTransportSource &transSource)
 		:thumbnail(sourceSamplesPerThumbnailSample, formatManager, cache),
 		transSource(transSource), displayFullThumbnail(true),
 		waveColour(Colours::lightgrey)
@@ -59,15 +59,20 @@ public:
 		repaint();
 	}
 
+	void disableClick() { clickDisabled = true; }
+
 	AudioThumbnail &getThumbnail() { return thumbnail; }
 	void mouseDown(const MouseEvent &event) override
 	{
-		auto duration = transSource.getLengthInSeconds();
-		if (duration > 0.0)
+		if (!clickDisabled)
 		{
-			auto clickPosition = event.position.x;
-			auto audioPosition = (clickPosition / getWidth()) * duration;
-			transSource.setPosition(audioPosition);
+			auto duration = transSource.getLengthInSeconds();
+			if (duration > 0.0)
+			{
+				auto clickPosition = event.position.x;
+				auto audioPosition = (clickPosition / getWidth()) * duration;
+				transSource.setPosition(audioPosition);
+			}
 		}
 	}
 
@@ -80,9 +85,10 @@ public:
 	}
 private:
 	AudioThumbnail thumbnail;
-	AudioFilePlayerExt &transSource;
+	AudioTransportSource &transSource;
 	Colour waveColour;
 
+	bool clickDisabled = false;
 	bool displayFullThumbnail;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SimpleThumbnailComponent)

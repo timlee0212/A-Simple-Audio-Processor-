@@ -1,0 +1,2 @@
+
+#include "CompressorPlugin\PluginProcessor.h"

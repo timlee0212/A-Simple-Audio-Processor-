@@ -305,9 +305,6 @@
 #ifndef  JucePlugin_Build_AAX
 #define JucePlugin_Build_AAX              0
 #endif
-#ifndef  JucePlugin_Name
-#define JucePlugin_Name                   "JuceEqualizer"
-#endif
 #ifndef  JucePlugin_Desc
 #define JucePlugin_Desc                   "An equalizer based on the design of the provided effect in Bitwig Studio."
 #endif

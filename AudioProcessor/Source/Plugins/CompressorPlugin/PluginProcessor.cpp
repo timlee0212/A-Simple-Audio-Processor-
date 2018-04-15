@@ -13,7 +13,7 @@
 
 
 //==============================================================================
-PluginAudioProcessor::PluginAudioProcessor()
+CompressorAudiorocessor::CompressorAudiorocessor()
 {
     userParams[threshold].setMinMax(-20.f, 0.f);
     userParams[threshold].setWithUparam(DEFAULT_THRESHOLD);
@@ -28,27 +28,27 @@ PluginAudioProcessor::PluginAudioProcessor()
     userParams[release].setWithUparam(DEFAULT_RELEASE);
 }
 
-PluginAudioProcessor::~PluginAudioProcessor()
+CompressorAudiorocessor::~CompressorAudiorocessor()
 {
 }
 
 //==============================================================================
-const String PluginAudioProcessor::getName() const
+const String CompressorAudiorocessor::getName() const
 {
-    return JucePlugin_Name;
+    return "Compressor";
 }
 
-int PluginAudioProcessor::getNumParameters()
+int CompressorAudiorocessor::getNumParameters()
 {
     return totalNumParams;
 }
 
-float PluginAudioProcessor::getParameter (int index)
+float CompressorAudiorocessor::getParameter (int index)
 {
     return userParams[index].getVstVal();
 }
 
-void PluginAudioProcessor::setParameter (int index, float newValue)
+void CompressorAudiorocessor::setParameter (int index, float newValue)
 {
     userParams[index].setWithVstVal(newValue);
     switch (index) {
@@ -68,7 +68,7 @@ void PluginAudioProcessor::setParameter (int index, float newValue)
     }
 }
 
-float PluginAudioProcessor::getParameterDefaultValue (int index)
+float CompressorAudiorocessor::getParameterDefaultValue (int index)
 {
     switch (index) {
         case threshold: return DEFAULT_VST_THRESHOLD;
@@ -79,7 +79,7 @@ float PluginAudioProcessor::getParameterDefaultValue (int index)
     }
 }
 
-const String PluginAudioProcessor::getParameterName (int index)
+const String CompressorAudiorocessor::getParameterName (int index)
 {
     switch (index) {
         case threshold: return "Threshold";
@@ -90,7 +90,7 @@ const String PluginAudioProcessor::getParameterName (int index)
     }
 }
 
-const String PluginAudioProcessor::getParameterText (int index)
+const String CompressorAudiorocessor::getParameterText (int index)
 {
     switch (index) {
         case threshold: return String(thresholdDb, 2) + "db";
@@ -107,27 +107,27 @@ const String PluginAudioProcessor::getParameterText (int index)
     }
 }
 
-const String PluginAudioProcessor::getInputChannelName (int channelIndex) const
+const String CompressorAudiorocessor::getInputChannelName (int channelIndex) const
 {
     return String (channelIndex + 1);
 }
 
-const String PluginAudioProcessor::getOutputChannelName (int channelIndex) const
+const String CompressorAudiorocessor::getOutputChannelName (int channelIndex) const
 {
     return String (channelIndex + 1);
 }
 
-bool PluginAudioProcessor::isInputChannelStereoPair (int index) const
+bool CompressorAudiorocessor::isInputChannelStereoPair (int index) const
 {
     return true;
 }
 
-bool PluginAudioProcessor::isOutputChannelStereoPair (int index) const
+bool CompressorAudiorocessor::isOutputChannelStereoPair (int index) const
 {
     return true;
 }
 
-bool PluginAudioProcessor::acceptsMidi() const
+bool CompressorAudiorocessor::acceptsMidi() const
 {
    #if JucePlugin_WantsMidiInput
     return true;
@@ -136,7 +136,7 @@ bool PluginAudioProcessor::acceptsMidi() const
    #endif
 }
 
-bool PluginAudioProcessor::producesMidi() const
+bool CompressorAudiorocessor::producesMidi() const
 {
    #if JucePlugin_ProducesMidiOutput
     return true;
@@ -145,60 +145,60 @@ bool PluginAudioProcessor::producesMidi() const
    #endif
 }
 
-bool PluginAudioProcessor::silenceInProducesSilenceOut() const
+bool CompressorAudiorocessor::silenceInProducesSilenceOut() const
 {
     return false;
 }
 
-double PluginAudioProcessor::getTailLengthSeconds() const
+double CompressorAudiorocessor::getTailLengthSeconds() const
 {
     return 0.0;
 }
 
-int PluginAudioProcessor::getNumPrograms()
+int CompressorAudiorocessor::getNumPrograms()
 {
     return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
                 // so this should be at least 1, even if you're not really implementing programs.
 }
 
-int PluginAudioProcessor::getCurrentProgram()
+int CompressorAudiorocessor::getCurrentProgram()
 {
     return 0;
 }
 
-void PluginAudioProcessor::setCurrentProgram (int index)
+void CompressorAudiorocessor::setCurrentProgram (int index)
 {
 }
 
-const String PluginAudioProcessor::getProgramName (int index)
+const String CompressorAudiorocessor::getProgramName (int index)
 {
     return String();
 }
 
-void PluginAudioProcessor::changeProgramName (int index, const String& newName)
+void CompressorAudiorocessor::changeProgramName (int index, const String& newName)
 {
 }
 
-void PluginAudioProcessor::setThresh() {
+void CompressorAudiorocessor::setThresh() {
     thresholdDb = userParams[threshold].getUparamVal();
 }
 
-void PluginAudioProcessor::setRatio() {
+void CompressorAudiorocessor::setRatio() {
     aRatio = userParams[ratio].getUparamVal();
 }
 
-void PluginAudioProcessor::setAttack() {
+void CompressorAudiorocessor::setAttack() {
     attackTime = userParams[attack].getUparamVal();
     gainDymanics->setAttack(attackTime);
 }
 
-void PluginAudioProcessor::setRelease() {
+void CompressorAudiorocessor::setRelease() {
     releaseTime = userParams[release].getUparamVal();
     gainDymanics->setRelease(releaseTime);
 }
 
 //==============================================================================
-void PluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+void CompressorAudiorocessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
@@ -227,13 +227,13 @@ void PluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     }
 }
 
-void PluginAudioProcessor::releaseResources()
+void CompressorAudiorocessor::releaseResources()
 {
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
 }
 
-void PluginAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuffer& midiMessages)
+void CompressorAudiorocessor::processBlock (AudioSampleBuffer& buffer, MidiBuffer& midiMessages)
 {
     // In case we have more outputs than inputs, this code clears any output
     // channels that didn't contain input data, (because these aren't
@@ -281,25 +281,25 @@ void PluginAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuffer& 
 }
 
 //==============================================================================
-bool PluginAudioProcessor::hasEditor() const
+bool CompressorAudiorocessor::hasEditor() const
 {
     return true; // (change this to false if you choose to not supply an editor)
 }
 
-AudioProcessorEditor* PluginAudioProcessor::createEditor()
+AudioProcessorEditor* CompressorAudiorocessor::createEditor()
 {
     return new PluginAudioProcessorEditor (*this);
 }
 
 //==============================================================================
-void PluginAudioProcessor::getStateInformation (MemoryBlock& destData)
+void CompressorAudiorocessor::getStateInformation (MemoryBlock& destData)
 {
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
 }
 
-void PluginAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+void CompressorAudiorocessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
@@ -309,5 +309,5 @@ void PluginAudioProcessor::setStateInformation (const void* data, int sizeInByte
 // This creates new instances of the plugin..
 AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return new PluginAudioProcessor();
+    return new CompressorAudiorocessor();
 }

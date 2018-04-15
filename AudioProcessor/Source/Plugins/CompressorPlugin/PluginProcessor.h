@@ -8,10 +8,11 @@
   ==============================================================================
 */
 
-#ifndef PLUGINPROCESSOR_H_INCLUDED
-#define PLUGINPROCESSOR_H_INCLUDED
+#ifndef COMPRESSOR_H_INCLUDED
+#define COMPRESSOR_H_INCLUDED
 
-#include "../JuceLibraryCode/JuceHeader.h"
+#include "../plugins.h"
+
 #include "UParam.h"
 #include "PeakLevelDetector.h"
 #include "GainDynamics.h"
@@ -22,12 +23,12 @@
 //==============================================================================
 /**
 */
-class PluginAudioProcessor  : public AudioProcessor
+class CompressorAudiorocessor  : public AudioProcessor
 {
 public:
     //==============================================================================
-    PluginAudioProcessor();
-    ~PluginAudioProcessor();
+    CompressorAudiorocessor();
+    ~CompressorAudiorocessor();
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -109,7 +110,7 @@ private:
     void setAttack();
     void setRelease();
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginAudioProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CompressorAudiorocessor)
 };
 
 
