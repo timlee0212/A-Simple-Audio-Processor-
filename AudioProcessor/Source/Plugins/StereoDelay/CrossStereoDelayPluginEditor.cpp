@@ -32,7 +32,7 @@ CrossStereoDelayAudioProcessorEditor::CrossStereoDelayAudioProcessorEditor (Cros
 {
     addAndMakeVisible (DelayLabel = new Label ("Delay Label",
                                                TRANS("Delay")));
-    DelayLabel->setFont (Font (Font::getDefaultMonospacedFontName(), 18.00f, Font::bold));
+    DelayLabel->setFont (Font (Font::getDefaultMonospacedFontName(), 12.00f, Font::bold));
     DelayLabel->setJustificationType (Justification::centred);
     DelayLabel->setEditable (false, false, false);
     DelayLabel->setColour (Label::textColourId, Colours::azure);
@@ -42,7 +42,7 @@ CrossStereoDelayAudioProcessorEditor::CrossStereoDelayAudioProcessorEditor (Cros
     addAndMakeVisible (MixLabel = new Label ("Mix Label",
                                              TRANS("Mix")));
     MixLabel->setTooltip (TRANS("Wet/Dry Mix"));
-    MixLabel->setFont (Font (Font::getDefaultMonospacedFontName(), 18.00f, Font::bold));
+    MixLabel->setFont (Font (Font::getDefaultMonospacedFontName(), 12.00f, Font::bold));
     MixLabel->setJustificationType (Justification::centred);
     MixLabel->setEditable (false, false, false);
     MixLabel->setColour (Label::textColourId, Colours::azure);
@@ -75,7 +75,7 @@ CrossStereoDelayAudioProcessorEditor::CrossStereoDelayAudioProcessorEditor (Cros
     addAndMakeVisible (FeedbackLabel = new Label ("Feedback",
                                                   TRANS("Feedback")));
     FeedbackLabel->setTooltip (TRANS("Feedback Percentage"));
-    FeedbackLabel->setFont (Font (Font::getDefaultMonospacedFontName(), 18.00f, Font::bold));
+    FeedbackLabel->setFont (Font (Font::getDefaultMonospacedFontName(), 12.00f, Font::bold));
     FeedbackLabel->setJustificationType (Justification::centred);
     FeedbackLabel->setEditable (false, false, false);
     FeedbackLabel->setColour (Label::textColourId, Colours::azure);
@@ -188,7 +188,7 @@ void CrossStereoDelayAudioProcessorEditor::resized()
     FeedbackLabel->setBounds (proportionOfWidth (0.4310f), proportionOfHeight (0.2534f), proportionOfWidth (0.1552f), proportionOfHeight (0.1655f));
     FeedbackKnob->setBounds (proportionOfWidth (0.4483f), proportionOfHeight (0.4054f), proportionOfWidth (0.1207f), proportionOfHeight (0.3311f));
     DelayKnob->setBounds (proportionOfWidth (0.1552f), proportionOfHeight (0.4054f), proportionOfWidth (0.1207f), proportionOfHeight (0.3311f));
-    HeaderName->setBounds (96, 24, 288, 24);
+    HeaderName->setBounds (96, 24, 288, 80);
     tglCrossedFB->setBounds (8, 256, 150, 24);
     //[UserResized] Add your own custom resize handling here..
     //[/UserResized]

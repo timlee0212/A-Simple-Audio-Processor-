@@ -817,7 +817,7 @@ void MainComponent::saveAsButtonClicked()
 {
 	currentPositionLabel.setText("Saving...", dontSendNotification);
 	FileChooser chooser("Select a the place to save...",
-		File::nonexistent, "*.wav");
+		File::nonexistent, "*.wav;.flac;.aiff;.mp3;");
 	if (chooser.browseForFileToSave(true))
 	{
 		auto file = chooser.getResult();
@@ -834,7 +834,7 @@ void MainComponent::openButtonClicked()
 {
 	FileChooser chooser("Select a Wave file to play...",
 		File::nonexistent,
-		"*.wav;*.mp3");
+		"*.wav;*.mp3;*.flac;*.ogg;*.aiff;*.wmv,*.asf,*.wma;");
 	if (chooser.browseForFileToOpen())
 	{
 		auto file = chooser.getResult();
@@ -963,7 +963,15 @@ void MainComponent::saveCurrentWave(File &file, bool openAfterSaved)
 	deviceManager.getAudioDeviceSetup(setup);
 
 	std::unique_ptr<AudioFormat> format;
-	format.reset(new WavAudioFormat());
+	String extName = file.getFileExtension();
+	if (extName.containsIgnoreCase(".mp3"))
+		format.reset(new LAMEEncoderAudioFormat(File("LAME.EXE")));
+	else if (extName.containsIgnoreCase(".flac"))
+		format.reset(new FlacAudioFormat());
+	else if (extName.containsIgnoreCase(".aif"))
+		format.reset(new AiffAudioFormat());
+	else
+		format.reset(new WavAudioFormat());
 
 	ScopedPointer<OutputStream> outStream(file.createOutputStream());
 	if (outStream != nullptr)
