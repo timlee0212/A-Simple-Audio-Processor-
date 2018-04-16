@@ -13,6 +13,8 @@
     <FILE id="oPSTEB" name="icon_pause.png" compile="0" resource="1" file="Resource/icon_pause.png"/>
     <FILE id="xaM8vK" name="icon_play.png" compile="0" resource="1" file="Resource/icon_play.png"/>
     <FILE id="j47oG4" name="icon_record.png" compile="0" resource="1" file="Resource/icon_record.png"/>
+    <FILE id="t4OKFE" name="knob.png" compile="0" resource="1" file="Resource/knob.png"/>
+    <FILE id="Co6ST0" name="background.png" compile="0" resource="1" file="Resource/background.png"/>
   </MAINGROUP>
   <EXPORTFORMATS>
     <VS2017 targetFolder="Builds/VisualStudio2017">

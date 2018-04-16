@@ -76,6 +76,8 @@ public:
 
     /** Implementation of the AudioSource method. */
     void getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill);
+
+	void updatePreviousReadPosition(int64 previousPosition) { previousReadPosition = previousPosition; }
     
 private:
     //==============================================================================

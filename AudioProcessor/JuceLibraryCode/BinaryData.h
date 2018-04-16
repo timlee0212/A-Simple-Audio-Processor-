@@ -23,11 +23,17 @@ namespace BinaryData
     extern const char*   icon_record_png;
     const int            icon_record_pngSize = 926;
 
+    extern const char*   knob_png;
+    const int            knob_pngSize = 1023511;
+
+    extern const char*   background_png;
+    const int            background_pngSize = 159528;
+
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];
 
     // Number of elements in the namedResourceList array.
-    const int namedResourceListSize = 5;
+    const int namedResourceListSize = 7;
 
     // If you provide the name of one of the binary resource variables above, this function will
     // return the corresponding data and its size (or a null pointer if the name isn't found).

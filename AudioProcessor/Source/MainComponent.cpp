@@ -1,28 +1,33 @@
-/*
-  ==============================================================================
-
-    This file was auto-generated!
-
-  ==============================================================================
-  */
-
 #include "MainComponent.h"
 
 //==============================================================================
 MainComponent::MainComponent() 
 	: state(Stopped), 
-	thumbnailCache(50),
-	thumbnail(64, formatManager, thumbnailCache, audioPlayer),
-	recorder(thumbnail.getThumbnail())
+	thumbnailCache(40),
+	thumbnail(64, formatManager, thumbnailCache, *(audioPlayer.getAudioTransportSource()), &audioPlayer),
+	recorder(thumbnail.getThumbnail()),
+	mixer(deviceManager),
+	tempfile(".wav")
 {
 	// Make sure you set the size of the component after
 	// you add any child components.
 
+	menuBar.reset(new MenuBarComponent(this));
+	addAndMakeVisible(menuBar.get());
+	commandManager.registerAllCommandsForTarget(this);
+	setApplicationCommandManagerToWatch(&commandManager);
+
+	// this lets the command manager use keypresses that arrive in our window to send out commands
+	addKeyListener(commandManager.getKeyMappings());
+
+    addChildComponent(menuHeader);
+	addAndMakeVisible(sidePanel);
+	//===============================================================================================
 	loadIcons();
-	
-	addAndMakeVisible(&openButton);
-	openButton.setButtonText("Open...");
-	openButton.onClick = [this] {openButtonClicked(); };
+
+	addAndMakeVisible(&applyButton);
+	applyButton.setButtonText("Apply");
+	applyButton.onClick = [this] {applyEffects(); };
 
 	addAndMakeVisible(&playButton);
 	playButton.setImages(false, true, true, icon_play, 1.0f, Colours::transparentBlack,
@@ -41,35 +46,53 @@ MainComponent::MainComponent()
 	currentPositionLabel.setText("Stopped", dontSendNotification);
 	currentPositionLabel.setFont(Font(20, Font::bold));
 
-	addAndMakeVisible(&settingButton);
-	settingButton.setButtonText("Setting");
-	settingButton.onClick = [this] {settingButtonClicked(); };
+	addAndMakeVisible(&fileNameLabel);
+	fileNameLabel.setText("No File Loaded", dontSendNotification);
 
 	addAndMakeVisible(&recordButton);
 	recordButton.setImages(false, true, true, icon_record, 1.0f, Colours::transparentBlack,
 		icon_record, 0.8f, Colours::transparentBlack, icon_record, 0.5f, Colours::transparentBlack);
 	recordButton.onClick = [this] {recordButtonClicked(); };
 
-	addAndMakeVisible(&DSPButton);
-	DSPButton.setButtonText("Filter");
-	DSPButton.onClick = [this] {filterButtonClicked();};
-
-	addAndMakeVisible(&reverbButton);
-	reverbButton.setButtonText("Reverb");
-	reverbButton.onClick = [this] {reverbButtonClicked(); };
-
-
-	//Not Working So Far
-	//TODO:Make it work
 	addAndMakeVisible(&reverse);
 	reverse.setButtonText("Reverse");
-	//reverse.onClick = [this] {audioPlayer.setPlayDiretion(!audioPlayer.getPlayDirection()); };
-	reverse.setEnabled(false);
+	reverse.onClick = [this] {	reverseToggleChanged();}; 
+
+	addAndMakeVisible(&swap);
+	swap.setButtonText("Swap Channels");
+	swap.onClick = [this] { swapped = swap.getToggleState(); };
+
+	addAndMakeVisible(&addProcButton);
+	addProcButton.setButtonText("+");
+	addProcButton.onClick = [this] { addProcButtonClicked();};
+
+	addAndMakeVisible(&removeProcButton);
+	removeProcButton.setButtonText("-");
+	removeProcButton.onClick = [this] {	removeProcButtonClicked();};
+
+	addAndMakeVisible(&procSettingButton);
+	procSettingButton.setButtonText("Setting");
+	procSettingButton.onClick = [this] {procSettingButtonClicked(); };
+
+	addAndMakeVisible(&availProcList);
+	availProcList.addItemList(procName, 1);
+
+	addAndMakeVisible(&currentProcList);
+
+	meter_lnf = new FFAU::LevelMeterLookAndFeel();
+	meter_lnf->setColour(FFAU::LevelMeter::lmMeterGradientLowColour, Colours::green);
+	meter_lnf->setColour(FFAU::LevelMeter::lmMeterGradientMidColour, Colours::orange);
+	meter_lnf->setColour(FFAU::LevelMeter::lmMeterGradientMaxColour, Colours::red);
+	meter_lnf->setColour(FFAU::LevelMeter::lmBackgroundColour, Colours::transparentBlack);
+
+	meter = new FFAU::LevelMeter(FFAU::LevelMeter::Horizontal | FFAU::LevelMeter::Minimal);
+	meter->setLookAndFeel(meter_lnf);
+	meter->setMeterSource(&meterSource);
+	addAndMakeVisible(meter);
 
 	addAndMakeVisible(&thumbnail);
 
 	formatManager.registerBasicFormats();
-
 
 	//Create Controls of Basic Audio Transform
 	//==============================================================================
@@ -83,7 +106,7 @@ MainComponent::MainComponent()
 		playerControlLabels[i]->attachToComponent(playerControls[i], false);
 		playerControls[i]->addListener(this);
 		playerControls[i]->setValue(1.0);
-		playerControls[i]->setSliderStyle(Slider::RotaryVerticalDrag);
+		playerControls[i]->setSliderStyle(Slider::LinearHorizontal);
 		playerControls[i]->setTextBoxStyle(Slider::TextBoxBelow, false, 50, 16);
 
 		Justification centreJustification(Justification::centred);
@@ -119,12 +142,94 @@ MainComponent::MainComponent()
 	// specify the number of input and output channels that we want to open
 	setAudioChannels(2, 2);
 
-	startTimer(15);
+	startTimer(40);
+}
+
+void MainComponent::reverseToggleChanged()
+{
+	if (!reverse.getToggleState())
+		audioPlayer.getTimeSliceThread()->wait(500);
+	else
+		audioPlayer.getTimeSliceThread()->notify();
+	reverseSource->setPlayDirection(!reverse.getToggleState());
+}
+
+void MainComponent::procSettingButtonClicked()
+{
+	if (currentProcList.getSelectedId() != 0)
+	{
+		DialogWindow::LaunchOptions(ProcSetting);
+		ProcSetting.content.setNonOwned(processorEditorChain[currentProcList.getSelectedId() - 1]);
+		ProcSetting.dialogTitle = "Plugin Setting";
+		ProcSetting.componentToCentreAround = this;
+		ProcSetting.dialogBackgroundColour = Colours::darkgrey;
+		ProcSetting.escapeKeyTriggersCloseButton = true;
+		ProcSetting.useNativeTitleBar = true;
+		ProcSetting.resizable = false;
+		ProcSetting.runModal();
+	}
+}
+
+void MainComponent::removeProcButtonClicked()
+{
+	if (currentProcList.getSelectedId() != 0)
+	{
+		processorEditorChain.remove(currentProcList.getSelectedId() - 1);
+		processorChain.remove(currentProcList.getSelectedId() - 1);
+		currentProcList.clear();
+		for (auto proc : processorChain)
+		{
+			currentProcList.addItem(proc->getName(), currentProcList.getNumItems() + 1);
+		}
+	}
+}
+
+void MainComponent::addProcButtonClicked()
+{
+	deviceManager.closeAudioDevice();
+	switch (availProcList.getSelectedId() - 1)
+	{
+	case MoorerReverb:
+		processorChain.add(new MoorerReverbAudioProcessor());		
+		break;
+	case CrossStereoDelay:
+		processorChain.add(new CrossStereoDelayAudioProcessor());
+		break;
+	case StereoChorus:
+		processorChain.add(new StereoChorusAudioProcessor());
+		break;
+	case filter:
+		processorChain.add(new FrequalizerAudioProcessor());
+		break;
+	case Compressor:
+		processorChain.add(new CompressorExpanderAudioProcessor());
+		break;
+	case Delay:
+		processorChain.add(new StereoDelayAudioProcessor());
+		break;
+	case Flanger:
+		processorChain.add(new FlangerAudioProcessor());
+		break;
+	case Panning:
+		processorChain.add(new PanningAudioProcessor());
+		break;
+	case Phaser:
+		processorChain.add(new PhaserAudioProcessor());
+		break;
+	default:
+		return;
+	}
+	processorEditorChain.add(processorChain.getLast()->createEditor());
+	currentProcList.addItem(processorChain.getLast()->getName(), currentProcList.getNumItems() + 1);
+	deviceManager.restartLastAudioDevice();
 }
 
 MainComponent::~MainComponent()
 {
+	//MenuBarModel::setMacMainMenu(nullptr);
 	deviceManager.removeAudioCallback(&recorder);
+	meter->setLookAndFeel(nullptr);
+
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
 }
@@ -157,9 +262,9 @@ void MainComponent::playerStoppedOrStarted(AudioFilePlayer* player)
 
 void MainComponent::timerCallback()
 {
-	if (audioPlayer.isPlaying())
+	if (audioPlayer.isPlaying() && sampleRate > 0.0)
 	{
-		RelativeTime position(audioPlayer.getCurrentPosition());
+		RelativeTime position(audioPlayer.getAudioFormatReaderSource()->getNextReadPosition() / sampleRate);
 		auto minutes = ((int)position.inMinutes()) % 60;
 		auto seconds = ((int)position.inSeconds()) % 60;
 		auto millis = ((int)position.inMilliseconds()) % 1000;
@@ -235,13 +340,15 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     // For more details, see the help for AudioProcessor::prepareToPlay()
 	audioPlayer.prepareToPlay(samplesPerBlockExpected, sampleRate);
 
-	if (filterDSP.get() != nullptr)
+	this->sampleRate = sampleRate;
+	for (auto proc : processorChain)
 	{
-		filterDSP->prepareToPlay(samplesPerBlockExpected, sampleRate);
+		proc->prepareToPlay(sampleRate, samplesPerBlockExpected);
 	}
-	if (reverbDSP.get() != nullptr)
+
+	if (reverseSource.get() != nullptr)
 	{
-		reverbDSP->prepareToPlay(samplesPerBlockExpected, sampleRate);
+		reverseSource->prepareToPlay(samplesPerBlockExpected, sampleRate);
 	}
 }
 
@@ -260,19 +367,37 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 		return;
 	}
 	
-	if (filterDSP.get() != nullptr && FilterEnable)
-	{
-		filterDSP->getNextAudioBlock(bufferToFill);
-	}
-	else if (reverbDSP.get() != nullptr && reverbEnable)
-	{
-		reverbDSP->getNextAudioBlock(bufferToFill);
-	}
-	else
+	//Update position when forward and fill the buffer when backward
+	if (!reverse.getToggleState())
 	{
 		audioPlayer.getNextAudioBlock(bufferToFill);
 	}
+	else
+	{
+		audioPlayer.getAudioTransportSource()->setNextReadPosition(audioPlayer.getAudioFormatReaderSource()->getNextReadPosition());
+	}
+	if (reverseSource.get() != nullptr )
+	{
+		reverseSource->getNextAudioBlock(bufferToFill);
+	}
 
+	if (swapped && bufferToFill.buffer->getNumChannels()==2)
+	{
+		for (auto i = 0; i < bufferToFill.buffer->getNumSamples(); i++)
+		{
+			float temp = bufferToFill.buffer->getSample(0, i);
+			bufferToFill.buffer->setSample(0, i, bufferToFill.buffer->getSample(1, i));
+			bufferToFill.buffer->setSample(1, i, temp);
+		}
+	}
+
+	for (auto processor : processorChain)
+	{
+		if(!bufferToFill.buffer->hasBeenCleared())
+			processor->processBlock(*(bufferToFill.buffer), MidiBuffer());
+	}
+	if(!isSaving)
+		meterSource.measureBlock(*(bufferToFill.buffer));
 
 }
 
@@ -282,8 +407,11 @@ void MainComponent::releaseResources()
     // restarted due to a setting change.
 
     // For more details, see the help for AudioProcessor::releaseResources()
+	for (auto proc : processorChain)
+		proc->releaseResources();
 	audioPlayer.releaseResources();
-
+	if(reverseSource.get()!=nullptr)
+		reverseSource->releaseResources();
 }
 
 void MainComponent::startRecording()
@@ -314,11 +442,17 @@ void MainComponent::startRecording()
 
 }
 
-void MainComponent::openAudioFile(File &file)
+bool MainComponent::openAudioFile(File &file)
 {
-	//auto *reader = formatManager.createReaderFor(file);
+	deviceManager.closeAudioDevice();
 	if (audioPlayer.setFile(file))
 	{
+		processorEditorChain.clear(true);
+		processorChain.clear(true);
+		currentProcList.clear();
+		for (int i = 0; i < numControls; i++)
+			playerControls[i]->setValue(1.0);	//Set to default value
+
 		if (state != Stopped)
 		{
 			if (state == Paused || state == recorded)
@@ -326,18 +460,30 @@ void MainComponent::openAudioFile(File &file)
 			else
 				changeState(Stopping);
 		}
-		audioPlayer.setLooping(false);
-		audioPlayer.setLoopBetweenTimes(false);
 
-		/*
-		std::unique_ptr<AudioFormatReaderSource> newSource(new AudioFormatReaderSource(reader, true));
-		transportSource.setSource(newSource.get(), 0, nullptr, reader->sampleRate);
-		readerSource.reset(newSource.release());
-		*/
+		audioPlayer.setLoopBetweenTimes(false);
+		reverseSource.reset(new ReversibleAudioSource(audioPlayer.getAudioFormatReaderSource(), false));
+
+		//Swap Channels Only Valid for Stereo Audio
+		if (audioPlayer.getAudioFormatReaderSource()->getAudioFormatReader()->numChannels == 2)
+			swap.setEnabled(true);
+		else
+			swap.setEnabled(false);
 		
 		playButton.setEnabled(true);
 		thumbnail.setFile(file);
+		currentFile = file;
+		fileNameLabel.setText(file.getFileName(), dontSendNotification);
+		deviceManager.restartLastAudioDevice();
+		return true;
 	}
+	else
+	{
+		audioPlayer.setFile(currentFile);
+		deviceManager.restartLastAudioDevice();
+		return false;
+	}
+
 }
 
 //==============================================================================
@@ -346,8 +492,13 @@ void MainComponent::paint (Graphics& g)
     // (Our component is opaque, so we must completely fill the background with a solid colour)
 	g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
 
-	g.setColour(Colours::grey);
-	g.fillRect(Rectangle<float>(0, 0, 300, getHeight()));
+	g.setColour(Colours::lightcoral);
+	g.fillRoundedRectangle(10, 40, 280,getHeight()-50,10);
+	//Thumbnail Wave
+	g.fillRoundedRectangle(300,40,getWidth()-310,60,10);
+	//Main Wave
+	g.fillRoundedRectangle(300, 110, getWidth() - 310, getHeight() - 260, 10);
+	
     // You can add your drawing code here!
 }
 
@@ -357,7 +508,19 @@ void MainComponent::resized()
     // This is called when the MainContentComponent is resized.
     // If you add any child components, this is where you should
     // update their positions.
+	//=========================================================================
+	auto b = getBounds();
 
+	//if (menuBarPosition == MenuBarPosition::window)
+	//{
+		menuBar->setBounds(b.removeFromTop(LookAndFeel::getDefaultLookAndFeel()
+			.getDefaultMenuBarHeight()));
+	//}
+	//else if (menuBarPosition == MenuBarPosition::burger)
+	//{
+		//menuHeader.setBounds(b.removeFromTop(40));
+	//}
+	//=========================================================================
 	//ControlBar
 	int controlBarsY = getHeight() - 100;
 	int controlBarsXcenter = (getWidth() + leftPanelWidth) / 2;
@@ -366,33 +529,33 @@ void MainComponent::resized()
 	recordButton.setBounds(controlBarsXcenter + 20, controlBarsY, 40, 40);
 
 	reverse.setBounds(controlBarsXcenter + 100, controlBarsY, 200, 40);
+	swap.setBounds(controlBarsXcenter + 200, controlBarsY, 100, 40);
 
 	//Filter Group
 	for (int i = 0; i < 3; i++)
 	{
-		playerControls[i]->setBounds(10 + i * 90, 180, 85, 85);
+		playerControls[i]->setBounds(20 + i * 90, 80, 85, 85);
 	}
 	for (int i = 3; i < numControls; i++)
 	{
-		playerControls[i]->setBounds(10 + (i-3) * 90, 300, 85, 85);
+		playerControls[i]->setBounds(20 + (i-3) * 90, 200, 85, 85);
 	}
 
-
-	openButton.setBounds( 10 , 10, 100, 40);
-	settingButton.setBounds(10, 60, 100, 40);
-	DSPButton.setBounds(10, 120, 100, 40);
-	reverbButton.setBounds(130, 120, 100, 40);
+	fileNameLabel.setBounds(15, 300, leftPanelWidth - 15, 40);
+	applyButton.setBounds(15, getHeight() - 60, 100, 40);
 	currentPositionLabel.setBounds(leftPanelWidth + 50, getHeight() - 120 , 200 , 20);
 
+	availProcList.setBounds(15, getHeight() - 240, 150, 30);
+	addProcButton.setBounds(180, getHeight() - 240, 30, 30);
 
+	currentProcList.setBounds(15, getHeight() - 200, 150, 30);
+	removeProcButton.setBounds(180, getHeight() - 200, 30, 30);
+	procSettingButton.setBounds(220, getHeight() - 200, 60, 30);
 
-	Rectangle<int> thumbnailBounds(300, 60, getWidth() - leftPanelWidth, getHeight() - 200);
+	Rectangle<int> thumbnailBounds( 303 , 113, getWidth() - 316, getHeight() - 266);
 	thumbnail.setBounds(thumbnailBounds);
 
-	if (parametersComponent.get() != nullptr)
-	{
-		parametersComponent->setBounds(0, getHeight() - 300, leftPanelWidth, 300);
-	}
+	meter->setBounds(leftPanelWidth + 50, getHeight() - 40, getWidth() - leftPanelWidth - 70, 30);
 }
 
 void MainComponent::sliderValueChanged(Slider* slider)
@@ -431,6 +594,241 @@ void MainComponent::sliderValueChanged(Slider* slider)
 		}
 	}
 }
+///=============================================================================
+///Menu Related Section
+///=============================================================================
+PopupMenu MainComponent::getMenuForIndex(int menuIndex, const String& /*menuName*/)
+{
+	PopupMenu menu;
+
+	if (menuIndex == 0)
+	{
+		menu.addCommandItem(&commandManager, CommandIDs::fileOpen);
+		menu.addCommandItem(&commandManager, CommandIDs::fileSave);
+		menu.addCommandItem(&commandManager, CommandIDs::fileSaveas);
+		menu.addCommandItem(&commandManager, CommandIDs::fileNewrecording);
+	}
+	else if (menuIndex == 1)
+	{
+		menu.addCommandItem(&commandManager, CommandIDs::settingsSetting);
+		//menu.addCommandItem(&commandManager, CommandIDs::settingsColour);
+	}
+	else if (menuIndex == 2)
+	{
+		menu.addCommandItem(&commandManager, CommandIDs::effectLinein);
+		menu.addCommandItem(&commandManager, CommandIDs::effectLineout);
+		//menu.addCommandItem(&commandManager, CommandIDs::effectReverb);
+		//menu.addCommandItem(&commandManager, CommandIDs::effectEcho);
+	}
+	else if (menuIndex == 3)
+	{
+		menu.addCommandItem(&commandManager, CommandIDs::functionMixer);
+		menu.addCommandItem(&commandManager, CommandIDs::functionUpend);
+		menu.addCommandItem(&commandManager, CommandIDs::functionExchange);
+		menu.addCommandItem(&commandManager, CommandIDs::functionRecognize);
+	}
+
+	return menu;
+}
+
+void MainComponent::getAllCommands(Array<CommandID>& c)
+{
+	Array<CommandID> commands{
+		//===========================================
+		//File Relating
+		CommandIDs::fileOpen,
+		CommandIDs::fileSave,
+		CommandIDs::fileSaveas,
+		CommandIDs::fileNewrecording,
+		//============================================
+		//Setting Relating
+		CommandIDs::settingsSetting,
+		//CommandIDs::settingsColour,
+		//=======================================
+		//Effects Relating
+		/*CommandIDs::effectReverb,*/
+		CommandIDs::effectLinein,
+		CommandIDs::effectLineout,/*
+		CommandIDs::effectEcho,
+		//=======================================
+		//Functions Relating*/
+		CommandIDs::functionMixer,
+		CommandIDs::functionUpend,
+		CommandIDs::functionExchange,
+		CommandIDs::functionRecognize
+	};
+
+	c.addArray(commands);
+}
+
+void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& result)
+{
+	switch (commandID)
+	{
+		//===================================================
+		//File Relating
+	case CommandIDs::fileOpen:
+		result.setInfo("Open..", "Open an audio file", "Menu", 0);
+		//result.setTicked();
+		result.addDefaultKeypress('w', ModifierKeys::shiftModifier);
+		break;
+	case CommandIDs::fileSave:
+		result.setInfo("Save", "Save the change", "Menu", 0);
+		//result.setTicked();
+		result.addDefaultKeypress('g', ModifierKeys::shiftModifier);
+		break;
+	case CommandIDs::fileSaveas:
+		result.setInfo("Save as..", "Save the current file as a new file", "Menu", 0);
+		//result.setTicked();
+		result.addDefaultKeypress('b', ModifierKeys::shiftModifier);
+		break;
+	case CommandIDs::fileNewrecording:
+		result.setInfo("New recording file", "Build a new file beginning with recording", "Menu", 0);
+		//result.setTicked();
+		result.addDefaultKeypress('q', ModifierKeys::shiftModifier);
+		break;
+		//================================================================
+		//Setting Relating
+	case CommandIDs::settingsSetting:
+		result.setInfo("Setting", "Set Audio Configuration", "Settings", 0);
+		//result.setTicked(currentColour == Colours::red);
+		result.addDefaultKeypress('r', ModifierKeys::commandModifier);
+		break;/*
+	case CommandIDs::settingsColour:
+		result.setInfo("Colour", "Sets the UI Colour", "Settings", 0);
+		//result.setTicked(currentColour == Colours::green);
+		result.addDefaultKeypress('g', ModifierKeys::commandModifier);
+		break;
+
+		//================================================================
+		//Effect Relating
+	case CommandIDs::effectReverb:
+		result.setInfo("Reverb", "Get a reverb", "Effect", 0);
+		//result.setTicked(currentColour == Colours::red);
+		result.addDefaultKeypress('r', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+		break;*/
+	case CommandIDs::effectLinein:
+		result.setInfo("Fade in", "Let Audio Fade in", "Effect", 0);
+		//result.setTicked(currentColour == Colours::green);
+		result.addDefaultKeypress('i', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+		break;
+	case CommandIDs::effectLineout:
+		result.setInfo("Fade out", "Let Audio Fade out", "Effect", 0);
+		//result.setTicked(currentColour == Colours::blue);
+		result.addDefaultKeypress('o', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+		break;/*
+	case CommandIDs::effectEcho:
+		result.setInfo("Echo", "Sets the inner colour to blue", "Effect", 0);
+		//result.setTicked(currentColour == Colours::blue);
+		result.addDefaultKeypress('e', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+		break;
+
+		//==============================================================
+		//Function Relating*/
+	case CommandIDs::functionMixer:
+		result.setInfo("Mixer", "MultiTrackMixer", "Function", 0);
+		//result.setTicked(currentColour == Colours::red);
+		result.addDefaultKeypress('f', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+		break;
+	case CommandIDs::functionUpend:
+		result.setInfo("Upend", "Sets the inner colour to green", "Function", 0);
+		result.setTicked(reverse.getToggleState());
+		result.addDefaultKeypress('u', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+		break;
+	case CommandIDs::functionExchange:
+		result.setInfo("Exchange", "Sets the inner colour to blue", "Function", 0);
+		result.setTicked(swap.getToggleState());
+		result.addDefaultKeypress('x', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+		break;
+	case CommandIDs::functionRecognize:
+		result.setInfo("Recognize", "Distinguish between male and female voices", "Inner", 0);
+		//result.setTicked(currentColour == Colours::blue);
+		result.addDefaultKeypress('b', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+		break;
+
+	default:
+		break;
+	}
+}
+
+bool MainComponent::perform(const InvocationInfo& info)
+{
+	switch (info.commandID)
+	{
+		//===========================================
+		//File Relating
+	case CommandIDs::fileOpen:
+		openButtonClicked();
+		break;
+	case CommandIDs::fileSave:
+		saveButtonClicked();
+		break;
+	case CommandIDs::fileSaveas:
+		saveAsButtonClicked();
+		break;
+	case CommandIDs::fileNewrecording:
+		recordButtonClicked();
+		break;
+		//==================================
+		//Setting Relating
+	case CommandIDs::settingsSetting:
+		settingButtonClicked();
+		break;/*
+	case CommandIDs::settingsColour:
+		//currentColour = Colours::green;
+		break;
+		//====================================
+		//Effects Relating
+	case CommandIDs::effectReverb:
+		//MainComponent::reverbButtonClicked();
+		break;*/
+	case CommandIDs::effectLinein:
+		//currentColour = Colours::green;
+		break;
+	case CommandIDs::effectLineout:
+		//currentColour = Colours::blue;
+		break;/*
+	case CommandIDs::effectEcho:
+		//currentColour = Colours::blue;
+		break;
+		//========================================
+		//Function Relating*/
+	case CommandIDs::functionMixer:
+		mixerButtonClicked();
+		break;
+	case CommandIDs::functionUpend:
+		reverse.setToggleState(!reverse.getToggleState(),dontSendNotification);
+		reverseToggleChanged();
+		break;
+	case CommandIDs::functionExchange:
+		swap.setToggleState(!swap.getToggleState(), dontSendNotification);
+		swapped = swap.getToggleState();
+		break;
+	case CommandIDs::functionRecognize:
+		//currentColour = Colours::blue;
+		break;
+	default:
+		return false;
+	}
+
+	return true;
+}
+void MainComponent::saveAsButtonClicked()
+{
+	currentPositionLabel.setText("Saving...", dontSendNotification);
+	FileChooser chooser("Select a the place to save...",
+		File::nonexistent, "*.wav");
+	if (chooser.browseForFileToSave(true))
+	{
+		auto file = chooser.getResult();
+		file.deleteFile();
+		currentPositionLabel.setText("Saving File...", dontSendNotification);
+		saveCurrentWave(file);
+		deviceManager.restartLastAudioDevice();
+	}
+}
+///Menu Section
+///===================================================================================
 
 void MainComponent::openButtonClicked()
 {
@@ -461,6 +859,7 @@ void MainComponent::stopButtonClicked()
 		recorder.stop();
 		changeState(Stopped);
 		audioPlayer.releaseResources();
+		reverseSource->releaseResources();
 
 		//Don't know why but only can release buffer in this way
 		deviceManager.closeAudioDevice();
@@ -511,62 +910,114 @@ void MainComponent::recordButtonClicked()
 	}
 	startRecording();
 }
-
-void MainComponent::filterButtonClicked()
+void MainComponent::mixerButtonClicked()
 {
-	reverbEnable = false;
-
-	if (FilterEnable)
-	{
-
-		parametersComponent.reset();
-		FilterEnable = false;
-	}
-	else
-	{
-		FilterEnable = true;
-		filterDSP.reset(new DSPProcessor<I2RFilter>(audioPlayer));
-
-		deviceManager.closeAudioDevice();
-		deviceManager.restartLastAudioDevice();
-
-		auto& parameters = filterDSP->getParameters();
-		parametersComponent.reset();
-		if (parameters.size() > 0)
-		{
-			parametersComponent.reset(new DSPParametersComponent(parameters));
-			addAndMakeVisible(parametersComponent.get());
-		}
-		resized();
-	}
-
+	deviceManager.addAudioCallback(&mixer);
+	DialogWindow::LaunchOptions(mixerWin);
+	mixerWin.content.setNonOwned(&mixer);
+	mixerWin.dialogTitle = "MultiTrack Mixing";
+	mixerWin.componentToCentreAround = this;
+	mixerWin.dialogBackgroundColour = Colours::darkgrey;
+	mixerWin.escapeKeyTriggersCloseButton = true;
+	mixerWin.useNativeTitleBar = true;
+	mixerWin.resizable = true;
+	mixerWin.runModal();
+	deviceManager.removeAudioCallback(&mixer);
 }
 
-void MainComponent::reverbButtonClicked()
+void MainComponent::saveButtonClicked()
 {
-	FilterEnable = false;
-	if (reverbEnable)
+	TemporaryFile temp(currentFile);
+
+	File oldFile = currentFile, tempfile = temp.getFile();
+	currentPositionLabel.setText("Saving...", dontSendNotification);
+	saveCurrentWave(tempfile, false);
+
+	deviceManager.closeAudioDevice();
+	audioPlayer.setFile(File());
+	openAudioFile(tempfile);
+	if (oldFile.getFileExtension() == ".MP3" || oldFile.getFileExtension() == ".mp3")
 	{
-		parametersComponent.reset();
-		reverbEnable = false;
+		oldFile = File(oldFile.getFileNameWithoutExtension() + ".wav");	//Not yet support writing MP3 file
+		tempfile.copyFileTo(oldFile);
 	}
 	else
 	{
-		reverbEnable = true;
-		reverbDSP.reset(new DSPProcessor<ReverbDSP>(audioPlayer));
-		deviceManager.closeAudioDevice();
-		deviceManager.restartLastAudioDevice();
-
-		auto& parameters = reverbDSP->getParameters();
-		
-		parametersComponent.reset();
-
-		if (parameters.size() > 0)
-		{
-			parametersComponent.reset(new DSPParametersComponent(parameters));
-			addAndMakeVisible(parametersComponent.get());
-		}
-		resized();
+		temp.overwriteTargetFileWithTemporary();
 	}
+	openAudioFile(oldFile);
+	currentPositionLabel.setText("Saved", dontSendNotification);
 
+	deviceManager.restartLastAudioDevice();
+	
+}
+void MainComponent::saveCurrentWave(File &file, bool openAfterSaved)
+{
+
+	int64 totalSamples = audioPlayer.getTotalLength();
+
+	audioPlayer.stop();
+
+	//Get the information of channels and SampleRate
+	AudioDeviceManager::AudioDeviceSetup setup;
+	deviceManager.getAudioDeviceSetup(setup);
+
+	std::unique_ptr<AudioFormat> format;
+	format.reset(new WavAudioFormat());
+
+	ScopedPointer<OutputStream> outStream(file.createOutputStream());
+	if (outStream != nullptr)
+	{
+		ScopedPointer<AudioFormatWriter> writer(format->createWriterFor(outStream,
+			setup.sampleRate, 2, 16, {}, 0));
+		if (writer != nullptr)
+		{
+			outStream.release();
+
+			if (reverseSource.get() != nullptr && reverse.getToggleState())
+			{
+				audioPlayer.setNextReadPosition(audioPlayer.getTotalLength());
+				reverseSource->updatePreviousReadPosition(audioPlayer.getNextReadPosition());
+			}
+			else
+				audioPlayer.setPosition(0.0f);
+			deviceManager.closeAudioDevice();
+
+			audioPlayer.prepareToPlay(setup.bufferSize, setup.sampleRate);
+			audioPlayer.start();
+
+			isSaving = true;
+			double currentSpeed = audioPlayer.getPlaybackSettings().rate * audioPlayer.getPlaybackSettings().tempo;
+			for (auto sample = 0; sample < totalSamples / currentSpeed; sample += setup.bufferSize)
+			{
+				AudioSourceChannelInfo info;
+				info.buffer = new AudioSampleBuffer(2, setup.bufferSize);
+				info.numSamples = setup.bufferSize;
+				info.startSample = 0;
+				this->getNextAudioBlock(info);
+				std::this_thread::sleep_for(std::chrono::microseconds(10));	//Avoid Dropping Samples
+				writer->writeFromAudioSampleBuffer(*info.buffer, 0, setup.bufferSize); 
+				info.buffer->clear(); delete info.buffer;		//Avoid Memory Leak
+			}
+			writer = nullptr;
+			isSaving = false;
+
+			if (openAfterSaved)	openAudioFile(file);
+			audioPlayer.setPosition(0.0f);
+			reverseSource->updatePreviousReadPosition(0);
+			deviceManager.restartLastAudioDevice();
+
+			currentPositionLabel.setText("Finished.", dontSendNotification);
+			return;
+		}
+	}
+	currentPositionLabel.setText("Failed.", dontSendNotification);
+
+}
+void MainComponent::applyEffects()
+{
+	File temp = tempfile.getFile();
+	if (temp.exists())temp.deleteFile();
+	currentPositionLabel.setText("Applying Effects...", dontSendNotification);
+	saveCurrentWave(temp);
 }

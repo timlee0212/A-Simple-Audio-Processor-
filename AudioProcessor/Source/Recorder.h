@@ -34,7 +34,7 @@ public:
 				//Create Output Formater
 				//TODO:Support for more Format
 				WavAudioFormat wavFormat;
-				auto *writer = wavFormat.createWriterFor(fileStream.get(), sampleRate, 1, 16, {}, 0);
+				auto *writer = wavFormat.createWriterFor(fileStream.get(), sampleRate, 2, 16, {}, 0);
 				if (writer != nullptr)
 				{
 					fileStream.release();

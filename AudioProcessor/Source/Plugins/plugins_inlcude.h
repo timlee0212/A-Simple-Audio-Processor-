@@ -1,0 +1,10 @@
+
+#include "MoorerReverb\MoorerReverbPluginProcessor.h"
+#include "StereoDelay\CrossStereoDelayPluginProcessor.h"
+#include "StereoChorus\StereoChorusPluginProcessor.h"
+#include "Frequalizer\FrequalizerProcessor.h"
+#include "Compressor\CompressorPluginProcessor.h"
+#include "Delay\DelayPluginProcessor.h"
+#include "Flanger\FlangerPluginProcessor.h"
+#include "Panning\PanningPluginProcessor.h"
+#include "Phaser\PhaserPluginProcessor.h"

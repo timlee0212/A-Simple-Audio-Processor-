@@ -17,12 +17,11 @@
   ==============================================================================
 */
 
-#ifndef __JUCE_HEADER_419FC5D7D3F5212A__
-#define __JUCE_HEADER_419FC5D7D3F5212A__
+#ifndef __JUCE_HEADER_886C73E8D66FB066__
+#define __JUCE_HEADER_886C73E8D66FB066__
 
 //[Headers]     -- You can add your own extra header files here --
-#include "JuceHeader.h"
-#include "PluginProcessor.h"
+#include "CrossStereoDelayPluginProcessor.h"
 //[/Headers]
 
 
@@ -35,58 +34,57 @@
     Describe your class and how it works here!
                                                                     //[/Comments]
 */
-class PluginAudioProcessorEditor  : public AudioProcessorEditor,
-                                    public Timer,
-                                    public SliderListener
+class CrossStereoDelayAudioProcessorEditor  : public AudioProcessorEditor,
+                                              public Timer,
+											public Slider::Listener,
+											public Button::Listener
 {
 public:
     //==============================================================================
-    PluginAudioProcessorEditor (PluginAudioProcessor& p);
-    ~PluginAudioProcessorEditor();
+    CrossStereoDelayAudioProcessorEditor (CrossStereoDelayAudioProcessor* ownerFilter);
+    ~CrossStereoDelayAudioProcessorEditor();
 
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
     void timerCallback();
+    CrossStereoDelayAudioProcessor* getProcessor() const{
+        return static_cast<CrossStereoDelayAudioProcessor*>(getAudioProcessor());
+    }
     //[/UserMethods]
 
     void paint (Graphics& g);
     void resized();
     void sliderValueChanged (Slider* sliderThatWasMoved);
+    void buttonClicked (Button* buttonThatWasClicked);
+    void visibilityChanged();
 
+    // Binary resources:
+    static const char* pluginbkg_png;
+    static const int pluginbkg_pngSize;
 
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
-
-    // This reference is provided as a quick way for your editor to
-    // access the processor object that created it.
-    PluginAudioProcessor& processor;
-
-    PluginAudioProcessor& getProcessor() const
-    {
-        return static_cast<PluginAudioProcessor&> (processor);
-    }
-
-    float normalizedValue;
-
     //[/UserVariables]
 
     //==============================================================================
-    ScopedPointer<Slider> thresholdSlider;
-    ScopedPointer<Slider> ratioSlider;
-    ScopedPointer<Label> ratioLabel;
-    ScopedPointer<Label> thresholdLabel;
-    ScopedPointer<Slider> attackSlider;
-    ScopedPointer<Label> attackLabel;
-    ScopedPointer<Slider> releaseSlider;
-    ScopedPointer<Label> releaseLabel;
+    ScopedPointer<Label> DelayLabel;
+    ScopedPointer<Label> MixLabel;
+    ScopedPointer<Slider> MixKnob;
+    ScopedPointer<TextButton> BypassButton;
+    ScopedPointer<Label> FeedbackLabel;
+    ScopedPointer<Slider> FeedbackKnob;
+    ScopedPointer<Slider> DelayKnob;
+    ScopedPointer<Label> HeaderName;
+    ScopedPointer<ToggleButton> tglCrossedFB;
+    Image cachedImage_pluginbkg_png;
 
 
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginAudioProcessorEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CrossStereoDelayAudioProcessorEditor)
 };
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]
 
-#endif   // __JUCE_HEADER_419FC5D7D3F5212A__
+#endif   // __JUCE_HEADER_886C73E8D66FB066__
