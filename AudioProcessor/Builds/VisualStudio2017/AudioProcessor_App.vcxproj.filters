@@ -391,29 +391,47 @@
     <Filter Include="JUCE Library Code">
       <UniqueIdentifier>{7ED5A90E-41AF-A1EF-659B-37CEEAB9BA61}</UniqueIdentifier>
     </Filter>
-    <Filter Include="AudioProcessor\AudioSource">
-      <UniqueIdentifier>{05c55471-d575-4501-98dc-8821853aef32}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="AudioProcessor\AudioSource\SoundTouch">
-      <UniqueIdentifier>{c9c3fdce-3f18-45fe-84e5-12fd06a58183}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="AudioProcessor\AudioSource\Utilities">
-      <UniqueIdentifier>{d488c3de-5cef-49e2-aa9b-a2f0a5100a88}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="AudioProcessor\Plugin">
+    <Filter Include="AudioProcessor\Source\Plugin">
       <UniqueIdentifier>{79464cfb-771d-4a9a-a342-7e1759d5c89b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="AudioProcessor\Plugin\MoorerReverb">
+    <Filter Include="AudioProcessor\Source\Plugin\MoorerReverb">
       <UniqueIdentifier>{b4a0f123-10e9-4e06-b5f1-ef97ad4e08ad}</UniqueIdentifier>
     </Filter>
-    <Filter Include="AudioProcessor\Plugin\StereoChorus">
+    <Filter Include="AudioProcessor\Source\Plugin\StereoChorus">
       <UniqueIdentifier>{0603d38e-0107-4d18-be37-8fba41d44105}</UniqueIdentifier>
     </Filter>
-    <Filter Include="AudioProcessor\Plugin\CrossStereoDelay">
+    <Filter Include="AudioProcessor\Source\Plugin\CrossStereoDelay">
       <UniqueIdentifier>{73e78967-9251-4463-96bc-29512ad6cf43}</UniqueIdentifier>
     </Filter>
-    <Filter Include="AudioProcessor\Plugin\Frequalizer">
+    <Filter Include="AudioProcessor\Source\Plugin\Frequalizer">
       <UniqueIdentifier>{2d840f85-9a67-46c4-8cfa-217d003adf94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AudioProcessor\Source\AudioSource">
+      <UniqueIdentifier>{05c55471-d575-4501-98dc-8821853aef32}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AudioProcessor\Source\AudioSource\SoundTouch">
+      <UniqueIdentifier>{c9c3fdce-3f18-45fe-84e5-12fd06a58183}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AudioProcessor\Source\AudioSource\Utilities">
+      <UniqueIdentifier>{d488c3de-5cef-49e2-aa9b-a2f0a5100a88}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AudioProcessor\Source\Metres">
+      <UniqueIdentifier>{d8cc4a90-cf6d-4427-9cc4-865a11e9f00e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AudioProcessor\Source\Plugin\Compressor">
+      <UniqueIdentifier>{f0f9dfb0-6194-4872-ab27-e27daf7257f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AudioProcessor\Source\Plugin\Delay">
+      <UniqueIdentifier>{d0eaefd5-68f9-477f-a9ef-f4ee820abb03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AudioProcessor\Source\Plugin\Flanger">
+      <UniqueIdentifier>{8e53fa03-788f-474e-885e-d922d8315a6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AudioProcessor\Source\Plugin\Panning">
+      <UniqueIdentifier>{4df1f04b-24cd-4dfd-a229-bed6ec85ee66}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AudioProcessor\Source\Plugin\Phaser">
+      <UniqueIdentifier>{1d04f24a-0b3b-4817-bec4-7e084eabda42}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -2164,124 +2182,160 @@
       <Filter>JUCE Library Code</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\dRowAudio_AudioFilePlayer.cpp">
-      <Filter>AudioProcessor\AudioSource</Filter>
+      <Filter>AudioProcessor\Source\AudioSource</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\dRowAudio_AudioFilePlayerExt.cpp">
-      <Filter>AudioProcessor\AudioSource</Filter>
+      <Filter>AudioProcessor\Source\AudioSource</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\dRowAudio_FilteringAudioSource.cpp">
-      <Filter>AudioProcessor\AudioSource</Filter>
+      <Filter>AudioProcessor\Source\AudioSource</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\dRowAudio_LoopingAudioSource.cpp">
-      <Filter>AudioProcessor\AudioSource</Filter>
+      <Filter>AudioProcessor\Source\AudioSource</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\dRowAudio_MemoryInputSource.cpp">
-      <Filter>AudioProcessor\AudioSource</Filter>
+      <Filter>AudioProcessor\Source\AudioSource</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\dRowAudio_ReversibleAudioSource.cpp">
-      <Filter>AudioProcessor\AudioSource</Filter>
+      <Filter>AudioProcessor\Source\AudioSource</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\dRowAudio_SoundTouchAudioSource.cpp">
-      <Filter>AudioProcessor\AudioSource</Filter>
+      <Filter>AudioProcessor\Source\AudioSource</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\dRowAudio_SoundTouchProcessor.cpp">
-      <Filter>AudioProcessor\AudioSource</Filter>
+      <Filter>AudioProcessor\Source\AudioSource</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\FIRFilter.cpp">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\InterpolateCubic.cpp">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\InterpolateLinear.cpp">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\InterpolateShannon.cpp">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\mmx_optimized.cpp">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\PeakFinder.cpp">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\RateTransposer.cpp">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\SoundTouch.cpp">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\sse_optimized.cpp">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\TDStretch.cpp">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\AAFilter.cpp">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\BPMDetect.cpp">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\cpu_detect_x86.cpp">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\FIFOSampleBuffer.cpp">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Plugins\StereoDelay\CrossStereoDelayPluginEditor.cpp">
-      <Filter>AudioProcessor\Plugin\CrossStereoDelay</Filter>
+      <Filter>AudioProcessor\Source\Plugin\CrossStereoDelay</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Plugins\StereoDelay\CrossStereoDelayPluginProcessor.cpp">
-      <Filter>AudioProcessor\Plugin\CrossStereoDelay</Filter>
+      <Filter>AudioProcessor\Source\Plugin\CrossStereoDelay</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Plugins\StereoDelay\CrossDelayLine.cpp">
-      <Filter>AudioProcessor\Plugin\CrossStereoDelay</Filter>
+      <Filter>AudioProcessor\Source\Plugin\CrossStereoDelay</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Plugins\MoorerReverb\Moorer.cpp">
-      <Filter>AudioProcessor\Plugin\MoorerReverb</Filter>
+      <Filter>AudioProcessor\Source\Plugin\MoorerReverb</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Plugins\MoorerReverb\MoorerReverbPluginEditor.cpp">
-      <Filter>AudioProcessor\Plugin\MoorerReverb</Filter>
+      <Filter>AudioProcessor\Source\Plugin\MoorerReverb</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Plugins\MoorerReverb\MoorerReverbPluginProcessor.cpp">
-      <Filter>AudioProcessor\Plugin\MoorerReverb</Filter>
+      <Filter>AudioProcessor\Source\Plugin\MoorerReverb</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Plugins\MoorerReverb\AllPass.cpp">
-      <Filter>AudioProcessor\Plugin\MoorerReverb</Filter>
+      <Filter>AudioProcessor\Source\Plugin\MoorerReverb</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Plugins\MoorerReverb\Comb.cpp">
-      <Filter>AudioProcessor\Plugin\MoorerReverb</Filter>
+      <Filter>AudioProcessor\Source\Plugin\MoorerReverb</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Plugins\MoorerReverb\DelayLine.cpp">
-      <Filter>AudioProcessor\Plugin\MoorerReverb</Filter>
+      <Filter>AudioProcessor\Source\Plugin\MoorerReverb</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Plugins\MoorerReverb\ERTapDelayLine.cpp">
-      <Filter>AudioProcessor\Plugin\MoorerReverb</Filter>
+      <Filter>AudioProcessor\Source\Plugin\MoorerReverb</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Plugins\MoorerReverb\LowPass.cpp">
-      <Filter>AudioProcessor\Plugin\MoorerReverb</Filter>
+      <Filter>AudioProcessor\Source\Plugin\MoorerReverb</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Plugins\StereoChorus\FractionalDelayBuffer.cpp">
-      <Filter>AudioProcessor\Plugin\StereoChorus</Filter>
+      <Filter>AudioProcessor\Source\Plugin\StereoChorus</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Plugins\StereoChorus\Oscillator.cpp">
-      <Filter>AudioProcessor\Plugin\StereoChorus</Filter>
+      <Filter>AudioProcessor\Source\Plugin\StereoChorus</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Plugins\StereoChorus\StereoChorusPluginEditor.cpp">
-      <Filter>AudioProcessor\Plugin\StereoChorus</Filter>
+      <Filter>AudioProcessor\Source\Plugin\StereoChorus</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Plugins\StereoChorus\StereoChorusPluginProcessor.cpp">
-      <Filter>AudioProcessor\Plugin\StereoChorus</Filter>
+      <Filter>AudioProcessor\Source\Plugin\StereoChorus</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Plugins\StereoChorus\CustomLookAndFeel.cpp">
-      <Filter>AudioProcessor\Plugin\StereoChorus</Filter>
+      <Filter>AudioProcessor\Source\Plugin\StereoChorus</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Plugins\Frequalizer\FrequalizerProcessor.cpp">
-      <Filter>AudioProcessor\Plugin\Frequalizer</Filter>
+      <Filter>AudioProcessor\Source\Plugin\Frequalizer</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Plugins\Frequalizer\FrequalizerEditor.cpp">
-      <Filter>AudioProcessor\Plugin\Frequalizer</Filter>
+      <Filter>AudioProcessor\Source\Plugin\Frequalizer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Meters\ff_meters_LevelMeter.cpp">
+      <Filter>AudioProcessor\Source\Metres</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Plugins\Compressor\CompressorPluginEditor.cpp">
+      <Filter>AudioProcessor\Source\Plugin\Compressor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Plugins\Compressor\CompressorPluginProcessor.cpp">
+      <Filter>AudioProcessor\Source\Plugin\Compressor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Plugins\Flanger\FlangerPluginEditor.cpp">
+      <Filter>AudioProcessor\Source\Plugin\Flanger</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Plugins\Flanger\FlangerPluginProcessor.cpp">
+      <Filter>AudioProcessor\Source\Plugin\Flanger</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Plugins\Panning\PanningPluginEditor.cpp">
+      <Filter>AudioProcessor\Source\Plugin\Panning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Plugins\Panning\PanningPluginProcessor.cpp">
+      <Filter>AudioProcessor\Source\Plugin\Panning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Plugins\Phaser\PhaserPluginEditor.cpp">
+      <Filter>AudioProcessor\Source\Plugin\Phaser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Plugins\Phaser\PhaserPluginProcessor.cpp">
+      <Filter>AudioProcessor\Source\Plugin\Phaser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Plugins\Delay\BasicDelayLine.cpp">
+      <Filter>AudioProcessor\Source\Plugin\Delay</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Plugins\Delay\DelayPluginEditor.cpp">
+      <Filter>AudioProcessor\Source\Plugin\Delay</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Plugins\Delay\DelayPluginProcessor.cpp">
+      <Filter>AudioProcessor\Source\Plugin\Delay</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -4263,142 +4317,199 @@
       <Filter>AudioProcessor\Source</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\dRowAudio_AudioFilePlayer.h">
-      <Filter>AudioProcessor\AudioSource</Filter>
+      <Filter>AudioProcessor\Source\AudioSource</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\dRowAudio_AudioFilePlayerExt.h">
-      <Filter>AudioProcessor\AudioSource</Filter>
+      <Filter>AudioProcessor\Source\AudioSource</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\dRowAudio_FilteringAudioSource.h">
-      <Filter>AudioProcessor\AudioSource</Filter>
+      <Filter>AudioProcessor\Source\AudioSource</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\dRowAudio_LoopingAudioSource.h">
-      <Filter>AudioProcessor\AudioSource</Filter>
+      <Filter>AudioProcessor\Source\AudioSource</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\dRowAudio_MemoryInputSource.h">
-      <Filter>AudioProcessor\AudioSource</Filter>
+      <Filter>AudioProcessor\Source\AudioSource</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\dRowAudio_ReversibleAudioSource.h">
-      <Filter>AudioProcessor\AudioSource</Filter>
+      <Filter>AudioProcessor\Source\AudioSource</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\dRowAudio_SoundTouchAudioSource.h">
-      <Filter>AudioProcessor\AudioSource</Filter>
+      <Filter>AudioProcessor\Source\AudioSource</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\dRowAudio_SoundTouchProcessor.h">
-      <Filter>AudioProcessor\AudioSource</Filter>
+      <Filter>AudioProcessor\Source\AudioSource</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\dRowAudio_StreamAndFileHandler.h">
-      <Filter>AudioProcessor\AudioSource</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\AudioSource\UltimateAudioSource.h">
-      <Filter>AudioProcessor\AudioSource</Filter>
+      <Filter>AudioProcessor\Source\AudioSource</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\soundtouch\FIFOSamplePipe.h">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\soundtouch\FIRFilter.h">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\soundtouch\InterpolateCubic.h">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\soundtouch\InterpolateLinear.h">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\soundtouch\InterpolateShannon.h">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\soundtouch\PeakFinder.h">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\soundtouch\RateTransposer.h">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\soundtouch\SoundTouch.h">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\soundtouch\STTypes.h">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\soundtouch\TDStretch.h">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\soundtouch\AAFilter.h">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\soundtouch\BPMDetect.h">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\soundtouch\cpu_detect.h">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\soundtouch\FIFOSampleBuffer.h">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\Utility\dRowAudio_Utility.h">
-      <Filter>AudioProcessor\AudioSource\Utilities</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\Utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\AudioSource\Utility\drowaudio_constants.h">
-      <Filter>AudioProcessor\AudioSource\Utilities</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\Utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\plugins.h">
-      <Filter>AudioProcessor\Plugin</Filter>
+      <Filter>AudioProcessor\Source\Plugin</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\plugins_inlcude.h">
-      <Filter>AudioProcessor\Plugin</Filter>
+      <Filter>AudioProcessor\Source\Plugin</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\StereoDelay\CrossStereoDelayPluginEditor.h">
-      <Filter>AudioProcessor\Plugin\CrossStereoDelay</Filter>
+      <Filter>AudioProcessor\Source\Plugin\CrossStereoDelay</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\StereoDelay\CrossStereoDelayPluginProcessor.h">
-      <Filter>AudioProcessor\Plugin\CrossStereoDelay</Filter>
+      <Filter>AudioProcessor\Source\Plugin\CrossStereoDelay</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\StereoDelay\CrossDelayLine.h">
-      <Filter>AudioProcessor\Plugin\CrossStereoDelay</Filter>
+      <Filter>AudioProcessor\Source\Plugin\CrossStereoDelay</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\MoorerReverb\Moorer.h">
-      <Filter>AudioProcessor\Plugin\MoorerReverb</Filter>
+      <Filter>AudioProcessor\Source\Plugin\MoorerReverb</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\MoorerReverb\MoorerReverbPluginEditor.h">
-      <Filter>AudioProcessor\Plugin\MoorerReverb</Filter>
+      <Filter>AudioProcessor\Source\Plugin\MoorerReverb</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\MoorerReverb\MoorerReverbPluginProcessor.h">
-      <Filter>AudioProcessor\Plugin\MoorerReverb</Filter>
+      <Filter>AudioProcessor\Source\Plugin\MoorerReverb</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\MoorerReverb\AllPass.h">
-      <Filter>AudioProcessor\Plugin\MoorerReverb</Filter>
+      <Filter>AudioProcessor\Source\Plugin\MoorerReverb</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\MoorerReverb\Comb.h">
-      <Filter>AudioProcessor\Plugin\MoorerReverb</Filter>
+      <Filter>AudioProcessor\Source\Plugin\MoorerReverb</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\MoorerReverb\DelayLine.h">
-      <Filter>AudioProcessor\Plugin\MoorerReverb</Filter>
+      <Filter>AudioProcessor\Source\Plugin\MoorerReverb</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\MoorerReverb\ERTapDelayLine.h">
-      <Filter>AudioProcessor\Plugin\MoorerReverb</Filter>
+      <Filter>AudioProcessor\Source\Plugin\MoorerReverb</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\MoorerReverb\LowPass.h">
-      <Filter>AudioProcessor\Plugin\MoorerReverb</Filter>
+      <Filter>AudioProcessor\Source\Plugin\MoorerReverb</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\StereoChorus\FractionalDelayBuffer.h">
-      <Filter>AudioProcessor\Plugin\StereoChorus</Filter>
+      <Filter>AudioProcessor\Source\Plugin\StereoChorus</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\StereoChorus\Oscillator.h">
-      <Filter>AudioProcessor\Plugin\StereoChorus</Filter>
+      <Filter>AudioProcessor\Source\Plugin\StereoChorus</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\StereoChorus\StereoChorusPluginEditor.h">
-      <Filter>AudioProcessor\Plugin\StereoChorus</Filter>
+      <Filter>AudioProcessor\Source\Plugin\StereoChorus</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\StereoChorus\StereoChorusPluginProcessor.h">
-      <Filter>AudioProcessor\Plugin\StereoChorus</Filter>
+      <Filter>AudioProcessor\Source\Plugin\StereoChorus</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\StereoChorus\CustomLookAndFeel.h">
-      <Filter>AudioProcessor\Plugin\StereoChorus</Filter>
+      <Filter>AudioProcessor\Source\Plugin\StereoChorus</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\Frequalizer\FrequalizerProcessor.h">
-      <Filter>AudioProcessor\Plugin\Frequalizer</Filter>
+      <Filter>AudioProcessor\Source\Plugin\Frequalizer</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\Frequalizer\FrequalizerEditor.h">
-      <Filter>AudioProcessor\Plugin\Frequalizer</Filter>
+      <Filter>AudioProcessor\Source\Plugin\Frequalizer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Meters\ff_meters_OutlineBuffer.h">
+      <Filter>AudioProcessor\Source\Metres</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Meters\ff_meters_SoundFieldLookAndFeelMethods.h">
+      <Filter>AudioProcessor\Source\Metres</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Meters\ff_meters_StereoFieldBuffer.h">
+      <Filter>AudioProcessor\Source\Metres</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Meters\ff_meters_StereoFieldComponent.h">
+      <Filter>AudioProcessor\Source\Metres</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Meters\ff_meters.h">
+      <Filter>AudioProcessor\Source\Metres</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Meters\ff_meters_LevelMeter.h">
+      <Filter>AudioProcessor\Source\Metres</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Meters\ff_meters_LevelMeterSource.h">
+      <Filter>AudioProcessor\Source\Metres</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Meters\ff_meters_LookAndFeel.h">
+      <Filter>AudioProcessor\Source\Metres</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Meters\ff_meters_LookAndFeelMethods.h">
+      <Filter>AudioProcessor\Source\Metres</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Plugins\Compressor\CompressorPluginEditor.h">
+      <Filter>AudioProcessor\Source\Plugin\Compressor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Plugins\Compressor\CompressorPluginProcessor.h">
+      <Filter>AudioProcessor\Source\Plugin\Compressor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Plugins\Flanger\FlangerPluginEditor.h">
+      <Filter>AudioProcessor\Source\Plugin\Flanger</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Plugins\Flanger\FlangerPluginProcessor.h">
+      <Filter>AudioProcessor\Source\Plugin\Flanger</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Plugins\Panning\PanningPluginEditor.h">
+      <Filter>AudioProcessor\Source\Plugin\Panning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Plugins\Panning\PanningPluginProcessor.h">
+      <Filter>AudioProcessor\Source\Plugin\Panning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Plugins\Phaser\PhaserPluginEditor.h">
+      <Filter>AudioProcessor\Source\Plugin\Phaser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Plugins\Phaser\PhaserPluginProcessor.h">
+      <Filter>AudioProcessor\Source\Plugin\Phaser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Plugins\Delay\BasicDelayLine.h">
+      <Filter>AudioProcessor\Source\Plugin\Delay</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Plugins\Delay\DelayPluginEditor.h">
+      <Filter>AudioProcessor\Source\Plugin\Delay</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Plugins\Delay\DelayPluginProcessor.h">
+      <Filter>AudioProcessor\Source\Plugin\Delay</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -4415,7 +4526,7 @@
       <Filter>JUCE Modules\juce_graphics\image_formats\pnglib</Filter>
     </None>
     <None Include="..\..\Source\AudioSource\soundtouch\SoundTouch.vcproj">
-      <Filter>AudioProcessor\AudioSource\SoundTouch</Filter>
+      <Filter>AudioProcessor\Source\AudioSource\SoundTouch</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

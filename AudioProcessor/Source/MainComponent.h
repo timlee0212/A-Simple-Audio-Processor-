@@ -10,12 +10,16 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 
+#include <chrono>
+#include <thread>
+
 #include "SimpleThumbailComponent.h"
 #include "Recorder.h"
 #include "DSPLib.h"
 #include "AudioSource/dRowAudio_AudioFilePlayerExt.h"
 #include "MixerComponent.h"
 #include "Plugins\plugins_inlcude.h"
+#include "Meters\ff_meters.h"
 
 //==============================================================================
 /*
@@ -91,12 +95,16 @@ class MainComponent : public AudioAppComponent,
 	public Timer,
 	public Slider::Listener,
 	public ApplicationCommandTarget,
-	public MenuBarModel 
+	public MenuBarModel,
+	public FileDragAndDropTarget
+	//public PositionableAudioSource
 {
 public:
-	
+
 	//==============================================================================
 	MainComponent();
+
+	void reverseToggleChanged();
 
 	~MainComponent();
 	//==============================================================================
@@ -112,26 +120,28 @@ public:
 		effectLinein,//效果渐强
 		effectLineout,//效果减弱
 		effectEcho,//效果回音
-		functionFilter,//功能滤波
+		functionMixer,//功能滤波
 		functionUpend,//功能倒放
 		functionExchange,//功能交换声道
 		functionRecognize//功能辨别男女声
 	};
-	
-	StringArray getMenuBarNames() override {return { "File", "Settings", "Effect","Function" };}
+
+	StringArray getMenuBarNames() override { return { "File", "Settings", "Effect","Function" }; }
 
 	PopupMenu getMenuForIndex(int menuIndex, const String& /*menuName*/) override;
 
 	void menuItemSelected(int /*menuItemID*/, int /*topLevelMenuIndex*/) override {}
 
-	ApplicationCommandTarget* getNextCommandTarget() override{return findFirstTargetParentComponent();}
+	ApplicationCommandTarget* getNextCommandTarget() override { return findFirstTargetParentComponent(); }
 
 	void getAllCommands(Array<CommandID>& c) override;
 
 	void getCommandInfo(CommandID commandID, ApplicationCommandInfo& result) override;
 
 	bool perform(const InvocationInfo& info) override;
-	   
+
+	void saveAsButtonClicked();
+
 	/*void setMenuBarPosition(MenuBarPosition newPosition)
 	{
 		if (menuBarPosition != newPosition)
@@ -156,7 +166,19 @@ public:
 	void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override;
 	void getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill) override;
 	void releaseResources() override;
+	
+	/*
+	void setNextReadPosition(int64 newPosition) override { audioPlayer.setNextReadPosition(newPosition); }
 
+	/** Returns the position from which the next block will be returned.*/
+	//int64 getNextReadPosition() const override { return audioPlayer.getNextReadPosition(); }
+
+	/** Returns the total length of the stream (in samples). */
+	//int64 getTotalLength() const override { return audioPlayer.getTotalLength(); }
+
+	/** Returns true if this source is actually playing in a loop. */
+	//bool isLooping() const override { return audioPlayer.isLooping(); }
+	
 	//==============================================================================
 	void paint(Graphics& g) override;
 	void resized() override;
@@ -164,6 +186,12 @@ public:
 	void timerCallback() override;
 	void playerStoppedOrStarted(AudioFilePlayer* player) override;
 	void fileChanged(AudioFilePlayer* player) override {};
+
+	//=============================================================================
+	bool isInterestedInFileDrag(const StringArray& files) override { if (files.size() == 1)return true; else return false; }
+
+	void filesDropped(const StringArray& files, int x, int y) { openAudioFile(File(files[0])); }
+
 
 private:
     //==============================================================================
@@ -197,33 +225,44 @@ private:
 		MoorerReverb,
 		CrossStereoDelay,
 		StereoChorus,
-		filter
+		filter,
+		Compressor,
+		Delay,
+		Flanger,
+		Panning,
+		Phaser
+	};
+
+	const StringArray procName = {
+		"MoorerReverb",
+		"CrossStereoDelay",
+		"StereoChorus",
+		"Frequalizer",
+		"CompressorExpander",
+		"Delay",
+		"Flanger",
+		"Panning",
+		"Phaser"		
 	};
 	//====================================
 	void openButtonClicked();
 	void playButtonClicked();
 	void stopButtonClicked();
 	void procSettingButtonClicked();
-	void removeProcButtonClicked();
-	
+	void removeProcButtonClicked();	
 	void recordButtonClicked();
-	void filterButtonClicked();
-	void reverbButtonClicked();
 	void settingButtonClicked();
 	void addProcButtonClicked();
-	
-	void addProcessorButtonClicked();
-	void removeProcessorButtonClickde(int index);
+
 	void saveButtonClicked();
-	void saveCurrentWave(File &file);
+	void saveCurrentWave(File &file, bool openAfterSaved = true);
 	void applyEffects();
 	void mixerButtonClicked();
 
 	void loadIcons();
-
 	void startRecording();
 
-	void openAudioFile(File &file);
+	bool openAudioFile(File &file);
 	void changeState(TransportState newState);
 
 	const int leftPanelWidth = 300;
@@ -240,25 +279,23 @@ private:
 	BurgerMenuHeader menuHeader{ sidePanel };
 	//=========================================
 
-	TextButton openButton, settingButton, addProcButton, removeProcButton, procSettingButton;
+	TextButton applyButton, addProcButton, removeProcButton, procSettingButton;
     ImageButton playButton, stopButton, recordButton;
 	ToggleButton reverse, swap;
-	ComboBox availProcList;
-	ComboBox currentProcList;
+	ComboBox availProcList, currentProcList;
 
 	OwnedArray<Slider> playerControls;
 	OwnedArray<Label> playerControlLabels;
 
-	Label currentPositionLabel;
+	Label currentPositionLabel, fileNameLabel;
 	AudioThumbnailCache thumbnailCache;
 	SimpleThumbnailComponent thumbnail;
 	MixerComponent mixer;
+
+	ScopedPointer<FFAU::LevelMeter> meter;
+	ScopedPointer<FFAU::LevelMeterLookAndFeel> meter_lnf;
+	FFAU::LevelMeterSource meterSource;
 	//==========================================
-
-	ScopedPointer<DSPParametersComponent> parametersComponent;
-
-	ScopedPointer<DSPProcessor<I2RFilter>> filterDSP;
-	ScopedPointer<DSPProcessor<ReverbDSP>> reverbDSP;
     AudioFormatManager formatManager;
 	AudioFilePlayerExt audioPlayer;
 	ScopedPointer<ReversibleAudioSource> reverseSource;
@@ -271,14 +308,14 @@ private:
     TransportState state;
 
     Recorder recorder;
-	File lastRecording;
+	File lastRecording;		
+	File currentFile;		//Save Current File Information When file change
 
 	TemporaryFile tempfile; //To save the processed wave
 
-	bool FilterEnable = false;
-	bool reverbEnable = false;
 	bool swapped = false;
 	bool isSaving = false;
+
 	//Icon Resource
 	Image icon_play;
 	Image icon_pause;
@@ -286,6 +323,7 @@ private:
 	Image icon_resume;
 	Image icon_stop;
 
+	double sampleRate = 0.0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
