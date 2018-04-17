@@ -1,9 +1,9 @@
-/*
-  ==============================================================================
+ï»¿/*
+==============================================================================
 
-    This file was auto-generated!
+This file was auto-generated!
 
-  ==============================================================================
+==============================================================================
 */
 
 #pragma once
@@ -24,8 +24,8 @@
 
 //==============================================================================
 /*
-    This component lives inside our window, and this is where you should put all
-    your controls and content.
+This component lives inside our window, and this is where you should put all
+your controls and content.
 */
 struct BurgerMenuHeader : public Component
 {
@@ -89,7 +89,7 @@ private:
 	ShapeButton burgerButton{ "burgerButton", Colours::lightgrey, Colours::lightgrey, Colours::white };
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BurgerMenuHeader)
-};          
+};
 
 class MainComponent : public AudioAppComponent,
 	public AudioFilePlayerExt::Listener,
@@ -111,20 +111,20 @@ public:
 	//==============================================================================
 	enum CommandIDs
 	{
-		fileOpen = 1,//´ò¿ªÎÄ¼þ
-		fileSave,//±£´æ¸ü¸Ä
-		fileSaveas,//Áí´æÎª
-		fileNewrecording,//ÐÂ½¨Â¼ÒôÎÄ¼þ
-		settingsSetting,//ÉèÖÃ¶ÔÓ¦ÓÚÔ­À´µÄsetting
-		settingsColour,//ÉèÖÃ½çÃæÑÕÉ«
-		effectReverb,//Ð§¹û»ìÒô
-		effectLinein,//Ð§¹û½¥Ç¿
-		effectLineout,//Ð§¹û¼õÈõ
-		effectEcho,//Ð§¹û»ØÒô
-		functionMixer,//¹¦ÄÜÂË²¨
-		functionUpend,//¹¦ÄÜµ¹·Å
-		functionExchange,//¹¦ÄÜ½»»»ÉùµÀ
-		functionRecognize//¹¦ÄÜ±æ±ðÄÐÅ®Éù
+		fileOpen = 1,//æ‰“å¼€æ–‡ä»¶
+		fileSave,//ä¿å­˜æ›´æ”¹
+		fileSaveas,//å¦å­˜ä¸º
+		fileNewrecording,//æ–°å»ºå½•éŸ³æ–‡ä»¶
+		settingsSetting,//è®¾ç½®å¯¹åº”äºŽåŽŸæ¥çš„setting
+		settingsColour,//è®¾ç½®ç•Œé¢é¢œè‰²
+		effectReverb,//æ•ˆæžœæ··éŸ³
+		effectLinein,//æ•ˆæžœæ¸å¼º
+		effectLineout,//æ•ˆæžœå‡å¼±
+		effectEcho,//æ•ˆæžœå›žéŸ³
+		functionMixer,//åŠŸèƒ½æ»¤æ³¢
+		functionUpend,//åŠŸèƒ½å€’æ”¾
+		functionExchange,//åŠŸèƒ½äº¤æ¢å£°é“
+		functionRecognize//åŠŸèƒ½è¾¨åˆ«ç”·å¥³å£°
 	};
 
 	StringArray getMenuBarNames() override { return { "File", "Settings", "Effect","Function" }; }
@@ -145,29 +145,29 @@ public:
 
 	/*void setMenuBarPosition(MenuBarPosition newPosition)
 	{
-		if (menuBarPosition != newPosition)
-		{
-			menuBarPosition = newPosition;
+	if (menuBarPosition != newPosition)
+	{
+	menuBarPosition = newPosition;
 
-			if (menuBarPosition != MenuBarPosition::burger)
-				sidePanel.showOrHide(false);
-			//MenuBarModel::setMacMainMenu(menuBarPosition == MenuBarPosition::global ? this : nullptr);
-			menuBar->setVisible(menuBarPosition == MenuBarPosition::window);
-			burgerMenu.setModel(menuBarPosition == MenuBarPosition::burger ? this : nullptr);
-			menuHeader.setVisible(menuBarPosition == MenuBarPosition::burger);
+	if (menuBarPosition != MenuBarPosition::burger)
+	sidePanel.showOrHide(false);
+	//MenuBarModel::setMacMainMenu(menuBarPosition == MenuBarPosition::global ? this : nullptr);
+	menuBar->setVisible(menuBarPosition == MenuBarPosition::window);
+	burgerMenu.setModel(menuBarPosition == MenuBarPosition::burger ? this : nullptr);
+	menuHeader.setVisible(menuBarPosition == MenuBarPosition::burger);
 
-			sidePanel.setContent(menuBarPosition == MenuBarPosition::burger ? &burgerMenu : nullptr, false);
-			menuItemsChanged();
+	sidePanel.setContent(menuBarPosition == MenuBarPosition::burger ? &burgerMenu : nullptr, false);
+	menuItemsChanged();
 
-			resized();
-		}
+	resized();
+	}
 	}*/
 
 	//==============================================================================
 	void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override;
 	void getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill) override;
 	void releaseResources() override;
-	
+
 	/*
 	void setNextReadPosition(int64 newPosition) override { audioPlayer.setNextReadPosition(newPosition); }
 
@@ -179,7 +179,7 @@ public:
 
 	/** Returns true if this source is actually playing in a loop. */
 	//bool isLooping() const override { return audioPlayer.isLooping(); }
-	
+
 	//==============================================================================
 	void paint(Graphics& g) override;
 	void resized() override;
@@ -195,8 +195,8 @@ public:
 
 
 private:
-    //==============================================================================
-    // Your private member variables go here...
+	//==============================================================================
+	// Your private member variables go here...
 
 	enum TransportState
 	{
@@ -234,6 +234,13 @@ private:
 		Phaser
 	};
 
+	enum FadingType
+	{
+		Normal,
+		FadeIn,
+		FadeOut
+	};
+
 	const StringArray procName = {
 		"MoorerReverb",
 		"CrossStereoDelay",
@@ -243,17 +250,19 @@ private:
 		"Delay",
 		"Flanger",
 		"Panning",
-		"Phaser"		
+		"Phaser"
 	};
 	//====================================
 	void openButtonClicked();
 	void playButtonClicked();
 	void stopButtonClicked();
 	void procSettingButtonClicked();
-	void removeProcButtonClicked();	
+	void removeProcButtonClicked();
 	void recordButtonClicked();
 	void settingButtonClicked();
 	void addProcButtonClicked();
+	void lineinButtonClicked();
+	void lineoutButtonClicked();
 
 	void saveButtonClicked();
 	void saveCurrentWave(File &file, bool openAfterSaved = true);
@@ -267,13 +276,15 @@ private:
 	void changeState(TransportState newState);
 
 	const int leftPanelWidth = 300;
+	int startFadingTime, startLoopingTime, stopLoopTime;
+	int fadingTime = 2;
 
 	//==================================
 	ApplicationCommandManager commandManager;
 
 	ScopedPointer<MenuBarComponent> menuBar;
-	
-//	MenuBarPosition menuBarPosition = MenuBarPosition::window;
+
+	//	MenuBarPosition menuBarPosition = MenuBarPosition::window;
 	SidePanel sidePanel{ "Menu", 300, false };
 
 	BurgerMenuComponent burgerMenu;
@@ -281,7 +292,7 @@ private:
 	//=========================================
 
 	TextButton applyButton, addProcButton, removeProcButton, procSettingButton;
-    ImageButton playButton, stopButton, recordButton;
+	ImageButton playButton, stopButton, recordButton;
 	ToggleButton reverse, swap;
 	ComboBox availProcList, currentProcList;
 
@@ -298,7 +309,7 @@ private:
 	FFAU::LevelMeterSource meterSource;
 	SimpleFFTDemo fft;
 	//==========================================
-    AudioFormatManager formatManager;
+	AudioFormatManager formatManager;
 	AudioFilePlayerExt audioPlayer;
 	ScopedPointer<ReversibleAudioSource> reverseSource;
 
@@ -307,16 +318,20 @@ private:
 
 	AudioProcessorPlayer player;
 
-    TransportState state;
+	TransportState state;
+	FadingType fadingType;
 
-    Recorder recorder;
-	File lastRecording;		
+	Recorder recorder;
+	File lastRecording;
 	File currentFile;		//Save Current File Information When file change
 
 	TemporaryFile tempfile; //To save the processed wave
 
 	bool swapped = false;
 	bool isSaving = false;
+
+	bool fadeIn = false;
+	bool fadeOut = false;
 
 	//Icon Resource
 	Image icon_play;
@@ -327,5 +342,5 @@ private:
 
 	double sampleRate = 0.0;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };
