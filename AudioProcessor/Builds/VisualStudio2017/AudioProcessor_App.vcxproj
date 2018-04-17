@@ -163,6 +163,7 @@
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\SoundTouch.cpp" />
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\sse_optimized.cpp" />
     <ClCompile Include="..\..\Source\AudioSource\soundtouch\TDStretch.cpp" />
+    <ClCompile Include="..\..\Source\FFTComponent\AudioFFT.cpp" />
     <ClCompile Include="..\..\Source\MainComponent.cpp" />
     <ClCompile Include="..\..\Source\Main.cpp" />
     <ClCompile Include="..\..\..\modules\juce_audio_basics\buffers\juce_AudioChannelSet.cpp">
@@ -1931,7 +1932,10 @@
     <ClInclude Include="..\..\Source\AudioSource\Utility\drowaudio_constants.h" />
     <ClInclude Include="..\..\Source\AudioSource\Utility\dRowAudio_Utility.h" />
     <ClInclude Include="..\..\Source\DSPLib.h" />
+    <ClInclude Include="..\..\Source\FFTComponent\AudioFFT.h" />
+    <ClInclude Include="..\..\Source\FFTComponent\PitchYIN.h" />
     <ClInclude Include="..\..\Source\FFTComponent\SimpleFFTDemo.h" />
+    <ClInclude Include="..\..\Source\FFTComponent\vad.h" />
     <ClInclude Include="..\..\Source\MainComponent.h" />
     <ClInclude Include="..\..\..\modules\juce_audio_basics\audio_play_head\juce_AudioPlayHead.h" />
     <ClInclude Include="..\..\..\modules\juce_audio_basics\buffers\juce_AudioChannelSet.h" />

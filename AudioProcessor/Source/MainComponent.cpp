@@ -529,7 +529,19 @@ void MainComponent::resized()
     // update their positions.
 	//=========================================================================
 	auto b = getBounds();
+	if (b.getWidth() < 800)
+	{
+		b.setWidth(800);
+		this->setBounds(b);
+		return;
+	}
 
+	if (b.getHeight() < 600)
+	{
+		b.setHeight(600);
+		this->setBounds(b);
+		return;
+	}
 	//if (menuBarPosition == MenuBarPosition::window)
 	//{
 		menuBar->setBounds(b.removeFromTop(LookAndFeel::getDefaultLookAndFeel()
@@ -571,12 +583,12 @@ void MainComponent::resized()
 	removeProcButton.setBounds(180, getHeight() - 120, 30, 30);
 	procSettingButton.setBounds(220, getHeight() - 120, 60, 30);
 
-	fft.setBounds(15, 350, leftPanelWidth - 30, getHeight() - 550);
+	fft.setBounds(15, 350, leftPanelWidth - 30, proportionOfHeight(0.24f));
 
 	Rectangle<int> thumbnailBounds( 303 , 113, getWidth() - 316, getHeight() - 266);
 	thumbnail.setBounds(thumbnailBounds);
 
-	meter->setBounds(leftPanelWidth + 50, getHeight() - 40, getWidth() - leftPanelWidth - 70, 30);
+	meter->setBounds(leftPanelWidth + 10, getHeight() - 50, getWidth() - leftPanelWidth - 20, 45);
 }
 
 void MainComponent::sliderValueChanged(Slider* slider)

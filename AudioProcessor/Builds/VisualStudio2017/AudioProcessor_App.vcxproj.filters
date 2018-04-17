@@ -2340,6 +2340,9 @@
     <ClCompile Include="..\..\Source\Plugins\Delay\DelayPluginProcessor.cpp">
       <Filter>AudioProcessor\Source\Plugin\Delay</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\FFTComponent\AudioFFT.cpp">
+      <Filter>AudioProcessor\Source\FFTComponent</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\MainComponent.h">
@@ -4515,6 +4518,15 @@
       <Filter>AudioProcessor\Source\Plugin\Delay</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\FFTComponent\SimpleFFTDemo.h">
+      <Filter>AudioProcessor\Source\FFTComponent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\FFTComponent\PitchYIN.h">
+      <Filter>AudioProcessor\Source\FFTComponent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\FFTComponent\AudioFFT.h">
+      <Filter>AudioProcessor\Source\FFTComponent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\FFTComponent\vad.h">
       <Filter>AudioProcessor\Source\FFTComponent</Filter>
     </ClInclude>
   </ItemGroup>
