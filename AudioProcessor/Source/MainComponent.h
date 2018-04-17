@@ -47,7 +47,6 @@ struct BurgerMenuHeader : public Component
 
 		burgerButton.onClick = [this] { showOrHide(); };
 		addAndMakeVisible(burgerButton);
-
 	}
 
 	~BurgerMenuHeader()
@@ -71,8 +70,8 @@ private:
 
 		burgerButton.setBounds(r.removeFromRight(40).withSizeKeepingCentre(20, 20));
 
-		//titleLabel.setFont(Font(getHeight() * 0.5f, Font::plain));
-		//titleLabel.setBounds(r);
+		titleLabel.setFont(Font(getHeight() * 0.5f, Font::plain));
+		titleLabel.setBounds(r);
 	}
 
 	void showOrHide()
@@ -81,17 +80,20 @@ private:
 	}
 
 	SidePanel& sidePanel;
+
+	Label titleLabel{ "titleLabel", "JUCE Demo" };
 	ShapeButton burgerButton{ "burgerButton", Colours::lightgrey, Colours::lightgrey, Colours::white };
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BurgerMenuHeader)
-};          
+};
 
 class MainComponent : public AudioAppComponent,
 	public AudioFilePlayerExt::Listener,
 	public Timer,
 	public Slider::Listener,
 	public ApplicationCommandTarget,
-	public MenuBarModel 
+	public MenuBarModel,
+	private ChangeListener
 {
 public:
 	
@@ -226,6 +228,17 @@ private:
 	void openAudioFile(File &file);
 	void changeState(TransportState newState);
 
+	void updateFollowTransportState()
+	{
+		thumbnail2->setFollowsTransport(followTransportButton.getToggleState());
+	}
+
+	/*void changeListenerCallback(ChangeBroadcaster* source) override
+	{
+		if (source == thumbnail2.get())
+			showAudioResource(URL(thumbnail2->getLastDroppedFile()));
+	}*/
+
 	const int leftPanelWidth = 300;
 
 	//==================================
@@ -252,14 +265,31 @@ private:
 	Label currentPositionLabel;
 	AudioThumbnailCache thumbnailCache;
 	SimpleThumbnailComponent thumbnail;
+	ScopedPointer<SimpleThumbnailComponent> thumbnail2;
 	MixerComponent mixer;
+
+	TimeSliceThread thread{ "audio file preview" };
+	AudioTransportSource transportSource;
 	//==========================================
+#ifndef JUCE_DEMO_RUNNER
+	AudioDeviceManager audioDeviceManager;
+#else
+	AudioDeviceManager& audioDeviceManager{ getSharedAudioDeviceManager(0, 2) };
+#endif
+	
+	AudioSourcePlayer audioSourcePlayer;
+	AudioFormatManager formatManager;
+	Slider zoomSlider{ Slider::LinearHorizontal, Slider::NoTextBox };
+	Label zoomLabel{ {}, "zoom:" };
+	ToggleButton followTransportButton{ "Follow Transport" };;
+
+	ScopedPointer<AudioFormatReaderSource> currentAudioFileSource;
 
 	ScopedPointer<DSPParametersComponent> parametersComponent;
 
 	ScopedPointer<DSPProcessor<I2RFilter>> filterDSP;
 	ScopedPointer<DSPProcessor<ReverbDSP>> reverbDSP;
-    AudioFormatManager formatManager;
+    
 	AudioFilePlayerExt audioPlayer;
 	ScopedPointer<ReversibleAudioSource> reverseSource;
 
@@ -285,6 +315,8 @@ private:
 	Image icon_record;
 	Image icon_resume;
 	Image icon_stop;
+
+	void changeListenerCallback(ChangeBroadcaster* source) override{}
 
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)

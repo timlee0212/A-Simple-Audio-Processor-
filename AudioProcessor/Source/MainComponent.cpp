@@ -4,9 +4,9 @@
 MainComponent::MainComponent() 
 	: state(Stopped), 
 	thumbnailCache(40),
-	thumbnail(64, formatManager, thumbnailCache, *(audioPlayer.getAudioTransportSource())),
-	recorder(thumbnail.getThumbnail())
-	,mixer(deviceManager)
+	thumbnail(64, formatManager, thumbnailCache, *(audioPlayer.getAudioTransportSource()),zoomSlider),
+	recorder(thumbnail.getThumbnail()),
+	mixer(deviceManager)
 {
 	// Make sure you set the size of the component after
 	// you add any child components.
@@ -19,14 +19,46 @@ MainComponent::MainComponent()
 	// this lets the command manager use keypresses that arrive in our window to send out commands
 	addKeyListener(commandManager.getKeyMappings());
 
-    addChildComponent(menuHeader);
+	addChildComponent(menuHeader);
 	addAndMakeVisible(sidePanel);
 	//===============================================================================================
 	loadIcons();
 	
-	addAndMakeVisible(&openButton);
-	openButton.setButtonText("Save");
-	openButton.onClick = [this] {openButtonClicked(); };	
+	//addAndMakeVisible(&openButton);
+	//openButton.setButtonText("Save");
+	//openButton.onClick = [this] {openButtonClicked(); };
+	//========================================================
+	//zoom
+	addAndMakeVisible(zoomLabel);//zoomLable
+	zoomLabel.setFont(Font(15.00f, Font::plain));
+	zoomLabel.setJustificationType(Justification::centredRight);
+	zoomLabel.setEditable(false, false, false);
+	zoomLabel.setColour(TextEditor::textColourId, Colours::black);
+	zoomLabel.setColour(TextEditor::backgroundColourId, Colour(0x00000000));
+
+	addAndMakeVisible(followTransportButton);//你动我不动，你不动我动
+	followTransportButton.onClick = [this] { updateFollowTransportState(); };
+
+	addAndMakeVisible(zoomSlider);//zoomSlider
+	zoomSlider.setRange(0, 1, 0);
+	zoomSlider.onValueChange = [this] { thumbnail2->setZoomFactor(zoomSlider.getValue()); };
+	zoomSlider.setSkewFactor(2);
+
+	addAndMakeVisible(&thumbnail);
+
+	thumbnail2.reset(new SimpleThumbnailComponent(512,formatManager, thumbnailCache, *(audioPlayer.getAudioTransportSource()), zoomSlider));
+	addAndMakeVisible(thumbnail2.get());
+	thumbnail2->addChangeListener(this);
+
+
+	formatManager.registerBasicFormats();
+	thread.startThread(3);
+
+	audioDeviceManager.addAudioCallback(&audioSourcePlayer);
+	audioSourcePlayer.setSource(&transportSource);
+
+	setOpaque(true);
+	//================================================================
 
 	addAndMakeVisible(&playButton);
 	playButton.setImages(false, true, true, icon_play, 1.0f, Colours::transparentBlack,
@@ -81,10 +113,6 @@ MainComponent::MainComponent()
 
 	addAndMakeVisible(&currentProcList);
 
-	addAndMakeVisible(&thumbnail);
-
-	formatManager.registerBasicFormats();
-
 
 	//Create Controls of Basic Audio Transform
 	//==============================================================================
@@ -125,9 +153,10 @@ MainComponent::MainComponent()
 	playerControlLabels[pitch]->setText("Pitch", dontSendNotification);
 	//===========================================================================
 
-	audioPlayer.addListener(this);
-	deviceManager.addAudioCallback(&recorder);
-	deviceManager.addAudioCallback(&player);
+	//audioPlayer.addListener(this);
+	//deviceManager.addAudioCallback(&recorder);
+	//deviceManager.addAudioCallback(&player);
+
 
 	setSize(1280, 720);
 
@@ -196,7 +225,11 @@ MainComponent::~MainComponent()
 {
 	//MenuBarModel::setMacMainMenu(nullptr);
 	deviceManager.removeAudioCallback(&recorder);
+	transportSource.setSource(nullptr);
+	audioSourcePlayer.setSource(nullptr);
+	thumbnail2->removeChangeListener(this);
 
+	audioDeviceManager.removeAudioCallback(&audioSourcePlayer);
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
 }
@@ -452,6 +485,7 @@ void MainComponent::openAudioFile(File &file)
 		
 		playButton.setEnabled(true);
 		thumbnail.setFile(file);
+		thumbnail2->setFile(file);
 	}
 }
 
@@ -499,7 +533,7 @@ void MainComponent::resized()
 	recordButton.setBounds(controlBarsXcenter + 20, controlBarsY, 40, 40);
 
 	reverse.setBounds(controlBarsXcenter + 100, controlBarsY, 200, 40);
-	swap.setBounds(controlBarsXcenter + 200, controlBarsY, 100, 40);
+	swap.setBounds(controlBarsXcenter + 180, controlBarsY, 120, 40);
 
 	//Filter Group
 	for (int i = 0; i < 3; i++)
@@ -511,20 +545,36 @@ void MainComponent::resized()
 		playerControls[i]->setBounds(20 + (i-3) * 90, 200, 85, 85);
 	}
 
-	openButton.setBounds( 15 , 315, 100, 40);
+
+	//================================================================================
+	auto r = getLocalBounds().reduced(20);
+
+	auto controls = r.removeFromBottom(130);
+	auto zoom = controls.removeFromTop(25);
+	zoomLabel.setBounds(zoom.removeFromLeft(350));//zoom设置位置
+	zoomSlider.setBounds(zoom);
+
+	followTransportButton.setBounds(controlBarsXcenter + 300, controlBarsY, 200, 40);//transport设置位置
+
+	r.removeFromBottom(6);
+	thumbnail2->setBounds(300, 80, getWidth() - 310, getHeight() - 230);
+	r.removeFromBottom(6);
+
+	//========================================================================
+	//openButton.setBounds( 15 , 315, 100, 40);
 	//settingButton.setBounds(15, 60, 100, 40);
 	//DSPButton.setBounds(15, 120, 100, 40);
 	//reverbButton.setBounds(130, 120, 100, 40);
 	currentPositionLabel.setBounds(leftPanelWidth + 50, getHeight() - 120 , 200 , 20);
 
-	availProcList.setBounds(10, getHeight() - 240, 150, 30);
+	availProcList.setBounds(15, getHeight() - 240, 150, 30);
 	addProcButton.setBounds(180, getHeight() - 240, 30, 30);
 
-	currentProcList.setBounds(10, getHeight() - 200, 150, 30);
+	currentProcList.setBounds(15, getHeight() - 200, 150, 30);
 	removeProcButton.setBounds(180, getHeight() - 200, 30, 30);
 	procSettingButton.setBounds(220, getHeight() - 200, 60, 30);
 
-	Rectangle<int> thumbnailBounds( 303 , 113, getWidth() - 316, getHeight() - 266);
+	Rectangle<int> thumbnailBounds(300, 40, getWidth() - 310, 60);
 	thumbnail.setBounds(thumbnailBounds);
 
 	if (parametersComponent.get() != nullptr)
@@ -632,6 +682,7 @@ void MainComponent::getAllCommands(Array<CommandID>& c)
 		CommandIDs::functionExchange,
 		CommandIDs::functionRecognize
 	};
+	c.addArray(commands);
 }
 
 void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& result)
