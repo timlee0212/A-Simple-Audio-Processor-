@@ -52,7 +52,6 @@ struct BurgerMenuHeader : public Component
 
 		burgerButton.onClick = [this] { showOrHide(); };
 		addAndMakeVisible(burgerButton);
-
 	}
 
 	~BurgerMenuHeader()
@@ -76,8 +75,8 @@ private:
 
 		burgerButton.setBounds(r.removeFromRight(40).withSizeKeepingCentre(20, 20));
 
-		//titleLabel.setFont(Font(getHeight() * 0.5f, Font::plain));
-		//titleLabel.setBounds(r);
+		titleLabel.setFont(Font(getHeight() * 0.5f, Font::plain));
+		titleLabel.setBounds(r);
 	}
 
 	void showOrHide()
@@ -86,6 +85,8 @@ private:
 	}
 
 	SidePanel& sidePanel;
+
+	Label titleLabel{ "titleLabel", "JUCE Demo" };
 	ShapeButton burgerButton{ "burgerButton", Colours::lightgrey, Colours::lightgrey, Colours::white };
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BurgerMenuHeader)
@@ -140,7 +141,6 @@ public:
 	void getCommandInfo(CommandID commandID, ApplicationCommandInfo& result) override;
 
 	bool perform(const InvocationInfo& info) override;
-
 	void saveAsButtonClicked();
 
 	/*void setMenuBarPosition(MenuBarPosition newPosition)
@@ -179,7 +179,7 @@ public:
 
 	/** Returns true if this source is actually playing in a loop. */
 	//bool isLooping() const override { return audioPlayer.isLooping(); }
-
+	
 	//==============================================================================
 	void paint(Graphics& g) override;
 	void resized() override;
@@ -220,7 +220,6 @@ private:
 		pitch,
 		numControls
 	};
-
 	enum processorType
 	{
 		MoorerReverb,
@@ -275,6 +274,17 @@ private:
 	bool openAudioFile(File &file);
 	void changeState(TransportState newState);
 
+	void updateFollowTransportState()
+	{
+		thumbnail2->setFollowsTransport(followTransportButton.getToggleState());
+	}
+
+	/*void changeListenerCallback(ChangeBroadcaster* source) override
+	{
+	if (source == thumbnail2.get())
+	showAudioResource(URL(thumbnail2->getLastDroppedFile()));
+	}*/
+
 	const int leftPanelWidth = 300;
 	int startFadingTime, startLoopingTime, stopLoopTime;
 	int fadingTime = 2;
@@ -302,14 +312,26 @@ private:
 	Label currentPositionLabel, fileNameLabel;
 	AudioThumbnailCache thumbnailCache;
 	SimpleThumbnailComponent thumbnail;
+	ScopedPointer<SimpleThumbnailComponent> thumbnail2;
 	MixerComponent mixer;
+
+	TimeSliceThread thread{ "audio file preview" };
+	AudioTransportSource transportSource;
 
 	ScopedPointer<FFAU::LevelMeter> meter;
 	ScopedPointer<FFAU::LevelMeterLookAndFeel> meter_lnf;
 	FFAU::LevelMeterSource meterSource;
 	SimpleFFTDemo fft;
 	//==========================================
+	
+	AudioSourcePlayer audioSourcePlayer;
 	AudioFormatManager formatManager;
+	Slider zoomSlider{ Slider::LinearHorizontal, Slider::NoTextBox };
+	Label zoomLabel{ {}, "zoom:" };
+	ToggleButton followTransportButton{ "Follow Transport" };;
+
+	ScopedPointer<AudioFormatReaderSource> currentAudioFileSource;
+
 	AudioFilePlayerExt audioPlayer;
 	ScopedPointer<ReversibleAudioSource> reverseSource;
 
@@ -322,8 +344,7 @@ private:
 	FadingType fadingType;
 
 	Recorder recorder;
-	File lastRecording;
-	File currentFile;		//Save Current File Information When file change
+	File lastRecording, currentFile;
 
 	TemporaryFile tempfile; //To save the processed wave
 
@@ -339,7 +360,6 @@ private:
 	Image icon_record;
 	Image icon_resume;
 	Image icon_stop;
-
 	double sampleRate = 0.0;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)

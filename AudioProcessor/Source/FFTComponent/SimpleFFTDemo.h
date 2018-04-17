@@ -27,6 +27,7 @@ public:
 		useAvgButton.setButtonText("Avg.");
 		useAvgButton.onClick = [this] {
 			useAvg = useAvgButton.getToggleState();
+			sumMaxFreq = countMaxFreq = 0;
 			avgWinSlider.setEnabled(useAvgButton.getToggleState());
 			avgWinLabel.setEnabled(useAvgButton.getToggleState());
 		};
@@ -37,7 +38,7 @@ public:
 
 		addAndMakeVisible(&avgWinSlider);
 		avgWinSlider.setRange(1, 100, 1);
-		avgWinSlider.onValueChange = [this] {avgWin = avgWinSlider.getValue(); };
+		avgWinSlider.onValueChange = [this] {avgWin = avgWinSlider.getValue();	sumMaxFreq = countMaxFreq = 0; };
 		avgWinSlider.setEnabled(false);
 
         startTimerHz (60);
@@ -148,7 +149,7 @@ private:
 			double maxFreq;
 			if (pitch > 20 && pitch < 1000)
 			{
-				if (useAvg)
+				if (useAvg && avgWin>1)
 				{
 					sumMaxFreq += pitch; 
 					countMaxFreq++;

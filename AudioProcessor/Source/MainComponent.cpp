@@ -4,7 +4,7 @@
 MainComponent::MainComponent()
 	: state(Stopped),
 	thumbnailCache(40),
-	thumbnail(64, formatManager, thumbnailCache, *(audioPlayer.getAudioTransportSource()), &audioPlayer),
+	thumbnail(64, formatManager, thumbnailCache, *(audioPlayer.getAudioTransportSource()), &zoomSlider, &audioPlayer),
 	recorder(thumbnail.getThumbnail(), fft),
 	mixer(deviceManager),
 	tempfile(".wav"),
@@ -26,9 +26,45 @@ MainComponent::MainComponent()
 	//===============================================================================================
 	loadIcons();
 
+	//addAndMakeVisible(&openButton);
+	//openButton.setButtonText("Save");
+	//openButton.onClick = [this] {openButtonClicked(); };
+	//========================================================
+	//zoom
 	addAndMakeVisible(&applyButton);
 	applyButton.setButtonText("Apply");
 	applyButton.onClick = [this] {applyEffects(); };
+
+	addAndMakeVisible(zoomLabel);//zoomLable
+	zoomLabel.setFont(Font(15.00f, Font::plain));
+	zoomLabel.setJustificationType(Justification::centredRight);
+	zoomLabel.setEditable(false, false, false);
+	zoomLabel.setColour(TextEditor::textColourId, Colours::black);
+	zoomLabel.setColour(TextEditor::backgroundColourId, Colour(0x00000000));
+
+	addAndMakeVisible(followTransportButton);
+	followTransportButton.onClick = [this] { updateFollowTransportState(); };
+
+	addAndMakeVisible(zoomSlider);//zoomSlider
+	zoomSlider.setRange(0, 1, 0);
+	zoomSlider.onValueChange = [this] { thumbnail2->setZoomFactor(zoomSlider.getValue()); };
+	zoomSlider.setSkewFactor(2);
+
+	addAndMakeVisible(&thumbnail);
+
+	thumbnail2.reset(new SimpleThumbnailComponent(512, formatManager, thumbnailCache, *(audioPlayer.getAudioTransportSource()), &zoomSlider, &audioPlayer));
+	addAndMakeVisible(thumbnail2.get());
+	//thumbnail2->addChangeListener(this);
+
+
+	formatManager.registerBasicFormats();
+	thread.startThread(3);
+
+	deviceManager.addAudioCallback(&audioSourcePlayer);
+	audioSourcePlayer.setSource(&transportSource);
+
+	setOpaque(true);
+	//================================================================
 
 	addAndMakeVisible(&playButton);
 	playButton.setImages(false, true, true, icon_play, 1.0f, Colours::transparentBlack,
@@ -46,7 +82,6 @@ MainComponent::MainComponent()
 	addAndMakeVisible(&currentPositionLabel);
 	currentPositionLabel.setText("Stopped", dontSendNotification);
 	currentPositionLabel.setFont(Font(20, Font::bold));
-
 	addAndMakeVisible(&fileNameLabel);
 	fileNameLabel.setText("No File Loaded", dontSendNotification);
 
@@ -91,9 +126,9 @@ MainComponent::MainComponent()
 	meter->setMeterSource(&meterSource);
 	addAndMakeVisible(meter);
 
-	addAndMakeVisible(&thumbnail);
+	addAndMakeVisible(&fft);
 
-	formatManager.registerBasicFormats();
+	addAndMakeVisible(&thumbnail);
 
 	//Create Controls of Basic Audio Transform
 	//==============================================================================
@@ -135,8 +170,8 @@ MainComponent::MainComponent()
 	//===========================================================================
 
 	audioPlayer.addListener(this);
-	deviceManager.addAudioCallback(&recorder);
-	deviceManager.addAudioCallback(&player);
+	//deviceManager.addAudioCallback(&recorder);
+	//deviceManager.addAudioCallback(&player);
 
 	setSize(1280, 720);
 
@@ -229,8 +264,11 @@ MainComponent::~MainComponent()
 {
 	//MenuBarModel::setMacMainMenu(nullptr);
 	deviceManager.removeAudioCallback(&recorder);
-	meter->setLookAndFeel(nullptr);
+	transportSource.setSource(nullptr);
+	audioSourcePlayer.setSource(nullptr);
 
+	meter->setLookAndFeel(nullptr);
+	deviceManager.removeAudioCallback(&audioSourcePlayer);
 	// This shuts down the audio device and clears the audio source.
 	shutdownAudio();
 }
@@ -253,7 +291,7 @@ void MainComponent::loadIcons()
 
 void MainComponent::playerStoppedOrStarted(AudioFilePlayer* player)
 {
-	if (player->isPlaying())
+	if (audioPlayer.isPlaying())
 		changeState(Playing);
 	else if (state == Stopping || state == Playing)
 		changeState(Stopped);
@@ -303,13 +341,12 @@ void MainComponent::changeState(TransportState newState)
 			if (fadeIn)
 			{
 				fadingType = FadeIn;
-				if (startFadingTime != 0)
-					startFadingTime = audioPlayer.getAudioTransportSource()->getNextReadPosition();
+				startFadingTime = audioPlayer.getAudioTransportSource()->getNextReadPosition();
+				if (startFadingTime == 0) startFadingTime = sampleRate * 0.5;
 			}
 			else
 				fadingType = Normal;
 			audioPlayer.start();
-			//fadingType = Normal;
 			break;
 		case Playing:
 			playButton.setImages(false, true, true, icon_pause, 1.0f, Colours::transparentBlack,
@@ -339,14 +376,12 @@ void MainComponent::changeState(TransportState newState)
 		case Pausing:
 			audioPlayer.stop();
 			startFadingTime = audioPlayer.getAudioFormatReaderSource()->getNextReadPosition();
-			//	fadingType = Normal;
 			break;
 		case Paused:
 			playButton.setImages(false, true, true, icon_play, 1.0f, Colours::transparentBlack,
 				icon_play, 0.8f, Colours::transparentBlack, icon_play, 0.5f, Colours::transparentBlack);
 			stopButton.setEnabled(true);
 		case Stopping:
-
 			if (fadeOut)
 			{
 				fadingType = FadeOut;
@@ -486,6 +521,7 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 	}
 }
 
+
 void MainComponent::releaseResources()
 {
 	// This will be called when the audio device stops, or when it is being
@@ -557,9 +593,11 @@ bool MainComponent::openAudioFile(File &file)
 
 		playButton.setEnabled(true);
 		thumbnail.setFile(file);
+		thumbnail2->setFile(file);
 		currentFile = file;
 		fileNameLabel.setText(file.getFileName(), dontSendNotification);
 		deviceManager.restartLastAudioDevice();
+
 		return true;
 	}
 	else
@@ -618,6 +656,7 @@ void MainComponent::resized()
 	//{
 	//menuHeader.setBounds(b.removeFromTop(40));
 	//}
+
 	//=========================================================================
 	//ControlBar
 	int controlBarsY = getHeight() - 100;
@@ -627,7 +666,7 @@ void MainComponent::resized()
 	recordButton.setBounds(controlBarsXcenter + 20, controlBarsY, 40, 40);
 
 	reverse.setBounds(controlBarsXcenter + 100, controlBarsY, 200, 40);
-	swap.setBounds(controlBarsXcenter + 200, controlBarsY, 100, 40);
+	swap.setBounds(controlBarsXcenter + 180, controlBarsY, 120, 40);
 
 	//Filter Group
 	for (int i = 0; i < 3; i++)
@@ -637,10 +676,31 @@ void MainComponent::resized()
 	for (int i = 3; i < numControls; i++)
 	{
 		playerControls[i]->setBounds(20 + (i - 3) * 90, 200, 85, 85);
-	}
+	}	
 
 	fileNameLabel.setBounds(15, 300, leftPanelWidth - 15, 40);
 	applyButton.setBounds(15, getHeight() - 60, 100, 40);
+
+
+	//================================================================================
+	auto r = getLocalBounds().reduced(20);
+
+	auto controls = r.removeFromBottom(130);
+	auto zoom = controls.removeFromTop(25);
+	zoomLabel.setBounds(zoom.removeFromLeft(350));//zoom����λ��
+	zoomSlider.setBounds(zoom);
+
+	followTransportButton.setBounds(controlBarsXcenter + 300, controlBarsY, 200, 40);//transport����λ��
+
+	r.removeFromBottom(6);
+	thumbnail2->setBounds(300, 80, getWidth() - 310, getHeight() - 230);
+	r.removeFromBottom(6);
+
+	//========================================================================
+	//openButton.setBounds( 15 , 315, 100, 40);
+	//settingButton.setBounds(15, 60, 100, 40);
+	//DSPButton.setBounds(15, 120, 100, 40);
+	//reverbButton.setBounds(130, 120, 100, 40);
 	currentPositionLabel.setBounds(leftPanelWidth + 50, getHeight() - 120, 200, 20);
 
 	availProcList.setBounds(15, getHeight() - 160, 150, 30);
@@ -652,7 +712,7 @@ void MainComponent::resized()
 
 	fft.setBounds(15, 350, leftPanelWidth - 30, proportionOfHeight(0.24f));
 
-	Rectangle<int> thumbnailBounds( 303 , 113, getWidth() - 316, getHeight() - 266);
+	Rectangle<int> thumbnailBounds(300, 40, getWidth() - 310, 60);
 	thumbnail.setBounds(thumbnailBounds);
 
 	meter->setBounds(leftPanelWidth + 10, getHeight() - 50, getWidth() - leftPanelWidth - 20, 45);
@@ -704,28 +764,23 @@ PopupMenu MainComponent::getMenuForIndex(int menuIndex, const String& /*menuName
 	if (menuIndex == 0)
 	{
 		menu.addCommandItem(&commandManager, CommandIDs::fileOpen);
-		menu.addCommandItem(&commandManager, CommandIDs::fileSave);
 		menu.addCommandItem(&commandManager, CommandIDs::fileSaveas);
 		menu.addCommandItem(&commandManager, CommandIDs::fileNewrecording);
 	}
 	else if (menuIndex == 1)
 	{
 		menu.addCommandItem(&commandManager, CommandIDs::settingsSetting);
-		//menu.addCommandItem(&commandManager, CommandIDs::settingsColour);
 	}
 	else if (menuIndex == 2)
 	{
 		menu.addCommandItem(&commandManager, CommandIDs::effectLinein);
 		menu.addCommandItem(&commandManager, CommandIDs::effectLineout);
-		//menu.addCommandItem(&commandManager, CommandIDs::effectReverb);
-		//menu.addCommandItem(&commandManager, CommandIDs::effectEcho);
 	}
 	else if (menuIndex == 3)
 	{
 		menu.addCommandItem(&commandManager, CommandIDs::functionMixer);
 		menu.addCommandItem(&commandManager, CommandIDs::functionUpend);
 		menu.addCommandItem(&commandManager, CommandIDs::functionExchange);
-		menu.addCommandItem(&commandManager, CommandIDs::functionRecognize);
 	}
 
 	return menu;
@@ -737,27 +792,21 @@ void MainComponent::getAllCommands(Array<CommandID>& c)
 		//===========================================
 		//File Relating
 		CommandIDs::fileOpen,
-		CommandIDs::fileSave,
 		CommandIDs::fileSaveas,
 		CommandIDs::fileNewrecording,
 		//============================================
 		//Setting Relating
 		CommandIDs::settingsSetting,
-		//CommandIDs::settingsColour,
 		//=======================================
 		//Effects Relating
-		/*CommandIDs::effectReverb,*/
 		CommandIDs::effectLinein,
-		CommandIDs::effectLineout,/*
-								  CommandIDs::effectEcho,
-								  //=======================================
-								  //Functions Relating*/
+		CommandIDs::effectLineout,
+		//=======================================
+		//Functions Relating
 		CommandIDs::functionMixer,
 		CommandIDs::functionUpend,
-		CommandIDs::functionExchange,
-		CommandIDs::functionRecognize
+		CommandIDs::functionExchange
 	};
-
 	c.addArray(commands);
 }
 
@@ -771,11 +820,6 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 		result.setInfo("Open..", "Open an audio file", "Menu", 0);
 		//result.setTicked();
 		result.addDefaultKeypress('w', ModifierKeys::shiftModifier);
-		break;
-	case CommandIDs::fileSave:
-		result.setInfo("Save", "Save the change", "Menu", 0);
-		//result.setTicked();
-		result.addDefaultKeypress('g', ModifierKeys::shiftModifier);
 		break;
 	case CommandIDs::fileSaveas:
 		result.setInfo("Save as..", "Save the current file as a new file", "Menu", 0);
@@ -793,20 +837,7 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 		result.setInfo("Setting", "Set Audio Configuration", "Settings", 0);
 		//result.setTicked(currentColour == Colours::red);
 		result.addDefaultKeypress('r', ModifierKeys::commandModifier);
-		break;/*
-			  case CommandIDs::settingsColour:
-			  result.setInfo("Colour", "Sets the UI Colour", "Settings", 0);
-			  //result.setTicked(currentColour == Colours::green);
-			  result.addDefaultKeypress('g', ModifierKeys::commandModifier);
-			  break;
-
-			  //================================================================
-			  //Effect Relating
-			  case CommandIDs::effectReverb:
-			  result.setInfo("Reverb", "Get a reverb", "Effect", 0);
-			  //result.setTicked(currentColour == Colours::red);
-			  result.addDefaultKeypress('r', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
-			  break;*/
+		break;
 	case CommandIDs::effectLinein:
 		result.setInfo("Fade in", "Let Audio Fade in", "Effect", 0);
 		result.setTicked(fadeIn);
@@ -816,15 +847,7 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 		result.setInfo("Fade out", "Let Audio Fade out", "Effect", 0);
 		result.setTicked(fadeOut);
 		result.addDefaultKeypress('o', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
-		break;/*
-			  case CommandIDs::effectEcho:
-			  result.setInfo("Echo", "Sets the inner colour to blue", "Effect", 0);
-			  //result.setTicked(currentColour == Colours::blue);
-			  result.addDefaultKeypress('e', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
-			  break;
-
-			  //==============================================================
-			  //Function Relating*/
+		break;
 	case CommandIDs::functionMixer:
 		result.setInfo("Mixer", "MultiTrackMixer", "Function", 0);
 		//result.setTicked(currentColour == Colours::red);
@@ -840,12 +863,6 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 		result.setTicked(swap.getToggleState());
 		result.addDefaultKeypress('x', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
 		break;
-	case CommandIDs::functionRecognize:
-		result.setInfo("Recognize", "Distinguish between male and female voices", "Inner", 0);
-		//result.setTicked(currentColour == Colours::blue);
-		result.addDefaultKeypress('b', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
-		break;
-
 	default:
 		break;
 	}
@@ -860,9 +877,6 @@ bool MainComponent::perform(const InvocationInfo& info)
 	case CommandIDs::fileOpen:
 		openButtonClicked();
 		break;
-	case CommandIDs::fileSave:
-		saveButtonClicked();
-		break;
 	case CommandIDs::fileSaveas:
 		saveAsButtonClicked();
 		break;
@@ -873,26 +887,13 @@ bool MainComponent::perform(const InvocationInfo& info)
 		//Setting Relating
 	case CommandIDs::settingsSetting:
 		settingButtonClicked();
-		break;/*
-			  case CommandIDs::settingsColour:
-			  //currentColour = Colours::green;
-			  break;
-			  //====================================
-			  //Effects Relating
-			  case CommandIDs::effectReverb:
-			  //MainComponent::reverbButtonClicked();
-			  break;*/
+		break;
 	case CommandIDs::effectLinein:
 		fadeIn = !fadeIn;
 		break;
 	case CommandIDs::effectLineout:
 		fadeOut = !fadeOut;
-		break;/*
-			  case CommandIDs::effectEcho:
-			  //currentColour = Colours::blue;
-			  break;
-			  //========================================
-			  //Function Relating*/
+		break;
 	case CommandIDs::functionMixer:
 		mixerButtonClicked();
 		break;
@@ -903,9 +904,6 @@ bool MainComponent::perform(const InvocationInfo& info)
 	case CommandIDs::functionExchange:
 		swap.setToggleState(!swap.getToggleState(), dontSendNotification);
 		swapped = swap.getToggleState();
-		break;
-	case CommandIDs::functionRecognize:
-		//currentColour = Colours::blue;
 		break;
 	default:
 		return false;
@@ -1042,6 +1040,7 @@ void MainComponent::saveButtonClicked()
 	deviceManager.restartLastAudioDevice();
 
 }
+
 void MainComponent::saveCurrentWave(File &file, bool openAfterSaved)
 {
 
