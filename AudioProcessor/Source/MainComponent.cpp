@@ -5,9 +5,10 @@ MainComponent::MainComponent()
 	: state(Stopped), 
 	thumbnailCache(40),
 	thumbnail(64, formatManager, thumbnailCache, *(audioPlayer.getAudioTransportSource()), &audioPlayer),
-	recorder(thumbnail.getThumbnail()),
+	recorder(thumbnail.getThumbnail(), fft),
 	mixer(deviceManager),
-	tempfile(".wav")
+	tempfile(".wav"),
+	fft(deviceManager)
 {
 	// Make sure you set the size of the component after
 	// you add any child components.
@@ -89,6 +90,7 @@ MainComponent::MainComponent()
 	meter->setLookAndFeel(meter_lnf);
 	meter->setMeterSource(&meterSource);
 	addAndMakeVisible(meter);
+	addAndMakeVisible(&fft);
 
 	addAndMakeVisible(&thumbnail);
 
@@ -314,6 +316,18 @@ void MainComponent::changeState(TransportState newState)
 			playButton.setEnabled(false);
 			recordButton.setEnabled(false);
 			break;
+		case recorded:
+			recorder.stop();
+			changeState(Stopped);
+			//Don't know why but only can release buffer in this way
+			deviceManager.closeAudioDevice();
+			deviceManager.restartLastAudioDevice();
+			//Open the newest Recorded File
+			openAudioFile(lastRecording);
+			//Set Last Recording to None
+			lastRecording = File();
+			audioPlayer.stop();
+			break;
 		case Pausing:
 			audioPlayer.stop();
 			break;
@@ -339,6 +353,7 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
 
     // For more details, see the help for AudioProcessor::prepareToPlay()
 	audioPlayer.prepareToPlay(samplesPerBlockExpected, sampleRate);
+	fft.prepareToPlay(samplesPerBlockExpected, sampleRate);
 
 	this->sampleRate = sampleRate;
 	for (auto proc : processorChain)
@@ -396,8 +411,12 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 		if(!bufferToFill.buffer->hasBeenCleared())
 			processor->processBlock(*(bufferToFill.buffer), MidiBuffer());
 	}
-	if(!isSaving)
+
+	if (!isSaving)
+	{
 		meterSource.measureBlock(*(bufferToFill.buffer));
+		fft.getNextAudioBlock(bufferToFill);
+	}
 
 }
 
@@ -545,12 +564,14 @@ void MainComponent::resized()
 	applyButton.setBounds(15, getHeight() - 60, 100, 40);
 	currentPositionLabel.setBounds(leftPanelWidth + 50, getHeight() - 120 , 200 , 20);
 
-	availProcList.setBounds(15, getHeight() - 240, 150, 30);
-	addProcButton.setBounds(180, getHeight() - 240, 30, 30);
+	availProcList.setBounds(15, getHeight() - 160, 150, 30);
+	addProcButton.setBounds(180, getHeight() - 160, 30, 30);
 
-	currentProcList.setBounds(15, getHeight() - 200, 150, 30);
-	removeProcButton.setBounds(180, getHeight() - 200, 30, 30);
-	procSettingButton.setBounds(220, getHeight() - 200, 60, 30);
+	currentProcList.setBounds(15, getHeight() - 120, 150, 30);
+	removeProcButton.setBounds(180, getHeight() - 120, 30, 30);
+	procSettingButton.setBounds(220, getHeight() - 120, 60, 30);
+
+	fft.setBounds(15, 350, leftPanelWidth - 30, getHeight() - 550);
 
 	Rectangle<int> thumbnailBounds( 303 , 113, getWidth() - 316, getHeight() - 266);
 	thumbnail.setBounds(thumbnailBounds);
@@ -832,6 +853,12 @@ void MainComponent::saveAsButtonClicked()
 
 void MainComponent::openButtonClicked()
 {
+	if (state == Playing)
+		changeState(Pausing);
+	else if (state == recording)
+		changeState(recorded);
+	else
+		changeState(Stopped);
 	FileChooser chooser("Select a Wave file to play...",
 		File::nonexistent,
 		"*.wav;*.mp3;*.flac;*.ogg;*.aiff;*.wmv,*.asf,*.wma;");
@@ -855,22 +882,7 @@ void MainComponent::stopButtonClicked()
 	if (state == Paused)
 		changeState(Stopped);
 	else if (state == recording)
-	{
-		recorder.stop();
-		changeState(Stopped);
-		audioPlayer.releaseResources();
-		reverseSource->releaseResources();
-
-		//Don't know why but only can release buffer in this way
-		deviceManager.closeAudioDevice();
-		deviceManager.restartLastAudioDevice();
-
-		//Open the newest Recorded File
-		openAudioFile(lastRecording);
-
-		//Set Last Recording to None
-		lastRecording = File();
-	}
+		changeState(recorded);
 	else
 		changeState(Stopping);
 }

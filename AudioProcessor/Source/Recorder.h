@@ -1,15 +1,15 @@
 #pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
-
+#include "FFTComponent\SimpleFFTDemo.h"
 
 //Class for recording voice from input channel
 //And save the recording to file
 class Recorder : public AudioIODeviceCallback
 {
 public:
-	Recorder(AudioThumbnail &thumbnail)
-		:thumbnail(thumbnail)
+	Recorder(AudioThumbnail &thumbnail, SimpleFFTDemo &fft)
+		:thumbnail(thumbnail), fft(fft)
 	{
 		backgroundThread.startThread();
 	}
@@ -91,6 +91,9 @@ public:
 			//Use Audio Buffer to Wrap input data
 			AudioBuffer<float> buffer(const_cast<float**> (inputChannelData), thumbnail.getNumChannels(), numSamples);
 			thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
+			AudioSourceChannelInfo info;
+			info.buffer = &buffer; info.numSamples = numSamples; info.startSample = 0;
+			fft.getNextAudioBlock(info);
 			nextSampleNum += numSamples;
 		}
 		//TODO:Monitor Input
@@ -106,6 +109,8 @@ private:
 	AudioThumbnail & thumbnail;
 	TimeSliceThread backgroundThread{ "Audio Recorder Thread" };
 	ScopedPointer<AudioFormatWriter::ThreadedWriter> threadedWriter;
+	SimpleFFTDemo &fft;
+
 	double sampleRate = 0.0;
 	int nextSampleNum = 0;
 

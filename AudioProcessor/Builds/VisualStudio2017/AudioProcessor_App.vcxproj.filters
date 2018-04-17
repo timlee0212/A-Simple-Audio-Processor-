@@ -433,6 +433,9 @@
     <Filter Include="AudioProcessor\Source\Plugin\Phaser">
       <UniqueIdentifier>{1d04f24a-0b3b-4817-bec4-7e084eabda42}</UniqueIdentifier>
     </Filter>
+    <Filter Include="AudioProcessor\Source\FFTComponent">
+      <UniqueIdentifier>{4efc15e7-97a2-495b-8fb5-e364c9851c45}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\MainComponent.cpp">
@@ -4510,6 +4513,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\Plugins\Delay\DelayPluginProcessor.h">
       <Filter>AudioProcessor\Source\Plugin\Delay</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\FFTComponent\SimpleFFTDemo.h">
+      <Filter>AudioProcessor\Source\FFTComponent</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

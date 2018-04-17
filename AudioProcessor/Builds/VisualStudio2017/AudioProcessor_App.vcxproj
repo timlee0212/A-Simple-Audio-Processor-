@@ -1931,6 +1931,7 @@
     <ClInclude Include="..\..\Source\AudioSource\Utility\drowaudio_constants.h" />
     <ClInclude Include="..\..\Source\AudioSource\Utility\dRowAudio_Utility.h" />
     <ClInclude Include="..\..\Source\DSPLib.h" />
+    <ClInclude Include="..\..\Source\FFTComponent\SimpleFFTDemo.h" />
     <ClInclude Include="..\..\Source\MainComponent.h" />
     <ClInclude Include="..\..\..\modules\juce_audio_basics\audio_play_head\juce_AudioPlayHead.h" />
     <ClInclude Include="..\..\..\modules\juce_audio_basics\buffers\juce_AudioChannelSet.h" />

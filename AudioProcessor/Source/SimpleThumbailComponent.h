@@ -67,8 +67,11 @@ public:
 				else
 				{
 					auto readerSource = player->getAudioFormatReaderSource();
-					audioPosition = readerSource->getNextReadPosition();
-					drawPosition = (static_cast<double>(audioPosition) / readerSource->getTotalLength()) *  getLocalBounds().getWidth() + getLocalBounds().getX();
+					if (readerSource != nullptr)
+					{
+						audioPosition = readerSource->getNextReadPosition();
+						drawPosition = (static_cast<double>(audioPosition) / readerSource->getTotalLength()) *  getLocalBounds().getWidth() + getLocalBounds().getX();
+					}
 				}
 				g.drawLine(drawPosition, getLocalBounds().getY(), drawPosition, getLocalBounds().getBottom(), 2.0f);
 			}

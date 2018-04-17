@@ -20,6 +20,7 @@
 #include "MixerComponent.h"
 #include "Plugins\plugins_inlcude.h"
 #include "Meters\ff_meters.h"
+#include "FFTComponent\SimpleFFTDemo.h"
 
 //==============================================================================
 /*
@@ -295,6 +296,7 @@ private:
 	ScopedPointer<FFAU::LevelMeter> meter;
 	ScopedPointer<FFAU::LevelMeterLookAndFeel> meter_lnf;
 	FFAU::LevelMeterSource meterSource;
+	SimpleFFTDemo fft;
 	//==========================================
     AudioFormatManager formatManager;
 	AudioFilePlayerExt audioPlayer;
